@@ -9,32 +9,27 @@
  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
  </head>
- <body style="background-color:#ccc;">
+ <body>
   <div class="login-box" >
-  <div class="login-header">Login</div>
   <div class="login-body">
-    <p>Please enter your username and password</p>
     <form class="form-group" action="{{ url_for('login') }}" method="post">
-        <label>Username</label>
         <input type="text" class="form-control" name="username" placeholder="Username" id="username" required>
-        <label>Password</label>
+        <label> </label>
         <input type="password" class="form-control" name="password" placeholder="Password" id="password" required>
-        <input type="checkbox" value="checked"><b>Remember</b>
-        <input type="submit" value="Login" class="form-control btn btn-success " name="">
+        <input type="checkbox" value="checked" style="margin-top: 30px;"><b>Remember</b>
+        <br>
+        <input type="submit" value="Login" class="form-control btn btn-success " name="" style="width:100px; margin: 2% 2% 1% 35%;">
     </form>
     {% with messages = get_flashed_messages()  %}
     {% if messages %}
     {% for message in messages %}
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <div class="alert alert-success alert-dismissible fade show" role="alert" style="padding: 5px; margin: 1px; text-align: center;">
       {{ message }}
-      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">×</span>
-      </button>
     </div>
     {% endfor %}
     {% endif %}
     {% endwith %}
-    <p>No account <a href="{{ url_for('register') }}">Register</a></p>
+    <p>No account? <a href="{{ url_for('register') }}">Register!</a></p>
   </div>
  </div>
  </body>
