@@ -20,9 +20,9 @@ conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_
 def home():
     if 'loggedin' in session:
         if session['is_admin'] == True:
-            return render_template('home.html', email=session['email'], is_admin=session['is_admin'] )
+            return render_template('home_admin.html', email=session['email'], is_admin=session['is_admin'] )
         else:
-            return render_template('home.html', email=session['email'], is_admin=session['is_admin']) #REMOVE AFTER TESTING
+            return render_template('home_user.html', email=session['email'])
     return render_template('home.html')
 
 @app.route('/login/', methods=['GET', 'POST'])
@@ -42,6 +42,10 @@ def login():
                 session['id'] = account['id']
                 session['email'] = account['email']
                 session['is_admin'] = account['is_admin']
+                #session['city'] = account['city']
+                #session['country'] = account['country']
+                #session['phone'] = account['phone']
+                #session['adress'] = account['adress']
                 return redirect(url_for('home'))
             else:
                 flash('Incorrect username/password')
@@ -53,10 +57,14 @@ def login():
 def register():
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     if request.method == 'POST' and 'email' in request.form and 'password' in request.form:
-        first_name = request.form['fullname']
-        last_name = request.form['username']
+        first_name = request.form['first_name']
+        last_name = request.form['last_name']
         password = request.form['password']
         email = request.form['email']
+        #city = request.form['city']
+        #country = request.form['country']
+        #phone = request.form['phone']
+        #address = request.form['address']
         is_admin = False
     
         _hashed_password = generate_password_hash(password)
@@ -71,7 +79,7 @@ def register():
         elif not password or not email:
             flash('Please fill out the form!')
         else:
-            cursor.execute("INSERT INTO users (first_name, last_name, password, email, is_admin) VALUES (%s,%s,%s,%s,%s)", (first_name, last_name, _hashed_password, email, is_admin))
+            cursor.execute("INSERT INTO users (first_name, last_name, password, email, is_admin) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)", (first_name, last_name, _hashed_password, email, is_admin, city, country, address, phone))
             conn.commit()
             flash('You have successfully registered!')
     elif request.method == 'POST':
