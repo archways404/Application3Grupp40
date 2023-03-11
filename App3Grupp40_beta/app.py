@@ -45,7 +45,7 @@ def login():
                 #session['city'] = account['city']
                 #session['country'] = account['country']
                 #session['phone'] = account['phone']
-                #session['adress'] = account['adress']
+                #session['address'] = account['address']
                 return redirect(url_for('home'))
             else:
                 flash('Incorrect username/password')
@@ -66,9 +66,7 @@ def register():
         #phone = request.form['phone']
         #address = request.form['address']
         is_admin = False
-    
         _hashed_password = generate_password_hash(password)
- 
         cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
         account = cursor.fetchone()
         print(account)
@@ -99,10 +97,29 @@ def logout():
 def profile(): 
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     if 'loggedin' in session:
-        cursor.execute('SELECT * FROM users WHERE id = %s', [session['id']])
-        account = cursor.fetchone()
-        return render_template('profile.html', account=account)
+            if session['is_admin'] == True:
+                cursor.execute('SELECT * FROM users WHERE id = %s', [session['id']])
+                account = cursor.fetchone()
+                return render_template('profile_admin.html', account=account )
+            else:
+                cursor.execute('SELECT * FROM users WHERE id = %s', [session['id']])
+                account = cursor.fetchone()
+                return render_template('profile.html', account=account)
     return redirect(url_for('login'))
- 
+
+@app.route('/admin_add_supplier', methods=['GET', 'POST'])
+def admin_add_supplier(): 
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    if 'loggedin' in session:
+            if session['is_admin'] == True:
+                cursor.execute('SELECT * FROM users WHERE id = %s', [session['id']])
+                account = cursor.fetchone()
+                return render_template('admin_add_supplier.html')
+            else:
+                cursor.execute('SELECT * FROM users WHERE id = %s', [session['id']])
+                account = cursor.fetchone()
+                return render_template('profile.html', account=account)
+    return redirect(url_for('login'))
+
 if __name__ == "__main__":
     app.run(debug=True)
