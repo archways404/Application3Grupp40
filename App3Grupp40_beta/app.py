@@ -32,20 +32,20 @@ def login():
         email = request.form['email']
         password = request.form['password']
         print(password)
-        cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
+        cursor.execute('SELECT * FROM customers WHERE email = %s', (email,))
         account = cursor.fetchone()
         if account:
             password_rs = account['password']
             print(password_rs)
             if check_password_hash(password_rs, password):
                 session['loggedin'] = True
-                session['id'] = account['id']
+                session['customer_id'] = account['customer_id']
                 session['email'] = account['email']
                 session['is_admin'] = account['is_admin']
-                #session['city'] = account['city']
-                #session['country'] = account['country']
-                #session['phone'] = account['phone']
-                #session['address'] = account['address']
+                session['city'] = account['city']
+                session['country'] = account['country']
+                session['phone'] = account['phone']
+                session['address'] = account['address']
                 return redirect(url_for('home'))
             else:
                 flash('Incorrect username/password')
@@ -61,23 +61,23 @@ def register():
         last_name = request.form['last_name']
         password = request.form['password']
         email = request.form['email']
-        #city = request.form['city']
-        #country = request.form['country']
-        #phone = request.form['phone']
-        #address = request.form['address']
+        city = request.form['city']
+        country = request.form['country']
+        phone = request.form['phone']
+        address = request.form['address']
         is_admin = False
         _hashed_password = generate_password_hash(password)
-        cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
+        cursor.execute('SELECT * FROM customers WHERE email = %s', (email,))
         account = cursor.fetchone()
         print(account)
         if account:
             flash('Account already exists!')
         elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
             flash('Invalid email address!')
-        elif not password or not email:
+        elif not password or not email or not phone or not address or not country or not city or not first_name or not last_name:
             flash('Please fill out the form!')
         else:
-            cursor.execute("INSERT INTO users (first_name, last_name, password, email, is_admin) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)", (first_name, last_name, _hashed_password, email, is_admin, city, country, address, phone))
+            cursor.execute("INSERT INTO customers (first_name, last_name, password, email, is_admin, city, country, address, phone) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)", (first_name, last_name, _hashed_password, email, is_admin, city, country, address, phone))
             conn.commit()
             flash('You have successfully registered!')
     elif request.method == 'POST':
@@ -88,7 +88,7 @@ def register():
 @app.route('/logout')
 def logout():
    session.pop('loggedin', None)
-   session.pop('id', None)
+   session.pop('customer_id', None)
    session.pop('email', None)
    session.pop('is_admin', None)
    return redirect(url_for('home'))
@@ -98,11 +98,11 @@ def profile():
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     if 'loggedin' in session:
             if session['is_admin'] == True:
-                cursor.execute('SELECT * FROM users WHERE id = %s', [session['id']])
+                cursor.execute('SELECT * FROM customers WHERE customer_id = %s', [session['customer_id']])
                 account = cursor.fetchone()
                 return render_template('profile_admin.html', account=account )
             else:
-                cursor.execute('SELECT * FROM users WHERE id = %s', [session['id']])
+                cursor.execute('SELECT * FROM customers WHERE customer_id = %s', [session['customer_id']])
                 account = cursor.fetchone()
                 return render_template('profile.html', account=account)
     return redirect(url_for('login'))
@@ -112,14 +112,17 @@ def admin_add_supplier():
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     if 'loggedin' in session:
             if session['is_admin'] == True:
-                cursor.execute('SELECT * FROM users WHERE id = %s', [session['id']])
+                cursor.execute('SELECT * FROM customers WHERE customer_id = %s', [session['customer_id']])
                 account = cursor.fetchone()
                 return render_template('admin_add_supplier.html')
             else:
-                cursor.execute('SELECT * FROM users WHERE id = %s', [session['id']])
+                cursor.execute('SELECT * FROM customers WHERE customer_id = %s', [session['customer_id']])
                 account = cursor.fetchone()
                 return render_template('profile.html', account=account)
     return redirect(url_for('login'))
+
+
+#SQL STATEMENT COLLECTION BELOW
 
 if __name__ == "__main__":
     app.run(debug=True)
