@@ -19,7 +19,7 @@ conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_
 @app.route('/')
 def home():
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM products")
+    cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
     data = cursor.fetchall()
 
 
@@ -140,11 +140,8 @@ def admin_add_supplier():
     return redirect(url_for('login'))
     
 
-
-
 #SQL STATEMENT COLLECTION BELOW
 
     
-
 if __name__ == "__main__":
     app.run(debug=True)
