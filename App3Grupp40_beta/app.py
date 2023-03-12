@@ -133,8 +133,7 @@ def admin_add_supplier():
                     else:
                         cursor.execute("INSERT INTO suppliers (supplier_name, supplier_phone, supplier_adress) VALUES (%s,%s,%s)", (supplier_name, supplier_phone, supplier_adress))
                         conn.commit()
-                        flash('You have successfully added the supplier!')
-                        flash('Please refresh the page in order to see the updated list!')
+                        flash('You have successfully added the supplier, please refresh the page in order to see the updated list!')
                 return render_template('admin_add_supplier.html', data=data)
             else:
                 return render_template('profile.html')
