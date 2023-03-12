@@ -10,20 +10,25 @@ app = Flask(__name__)
 app.secret_key = 'grupp40'
  
 DB_HOST = "pgserver.mau.se"
-DB_NAME = "ak8893_test"
-DB_USER = "ak8893"
-DB_PASS = "xrbz4n8h"
+DB_NAME = "grupp40"
+DB_USER = "an4231"
+DB_PASS = "6umx36wl"
  
 conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
  
 @app.route('/')
 def home():
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT * FROM products")
+    data = cursor.fetchall()
+
+
     if 'loggedin' in session:
         if session['is_admin'] == True:
-            return render_template('home_admin.html', email=session['email'], is_admin=session['is_admin'] )
+            return render_template('home_admin.html', email=session['email'], is_admin=session['is_admin'], data=data )
         else:
-            return render_template('home_user.html', email=session['email'])
-    return render_template('home.html')
+            return render_template('home_user.html', email=session['email'], data=data)
+    return render_template('home.html', data=data)
 
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
@@ -108,21 +113,39 @@ def profile():
     return redirect(url_for('login'))
 
 @app.route('/admin_add_supplier', methods=['GET', 'POST'])
-def admin_add_supplier(): 
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+def admin_add_supplier():
     if 'loggedin' in session:
             if session['is_admin'] == True:
-                cursor.execute('SELECT * FROM customers WHERE customer_id = %s', [session['customer_id']])
-                account = cursor.fetchone()
-                return render_template('admin_add_supplier.html')
+                cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+                cursor.execute("SELECT * FROM suppliers")
+                data = cursor.fetchall()
+                if request.method == 'POST' and 'supplier_name' in request.form and 'supplier_phone' in request.form and 'supplier_adress' in request.form:
+                    supplier_name = request.form['supplier_name']
+                    supplier_phone = request.form['supplier_phone']
+                    supplier_adress = request.form['supplier_adress']
+                    cursor.execute('SELECT * FROM suppliers WHERE supplier_name = %s', (supplier_name,))
+                    doubleentry = cursor.fetchone()
+                    print(doubleentry)
+                    if doubleentry:
+                        flash('supplier already exists!')
+                    elif not supplier_name or not supplier_phone or not supplier_adress:
+                        flash('Please fill out the form!')
+                    else:
+                        cursor.execute("INSERT INTO suppliers (supplier_name, supplier_phone, supplier_adress) VALUES (%s,%s,%s)", (supplier_name, supplier_phone, supplier_adress))
+                        conn.commit()
+                        flash('You have successfully added the supplier!')
+                        flash('Please refresh the page in order to see the updated list!')
+                return render_template('admin_add_supplier.html', data=data)
             else:
-                cursor.execute('SELECT * FROM customers WHERE customer_id = %s', [session['customer_id']])
-                account = cursor.fetchone()
-                return render_template('profile.html', account=account)
+                return render_template('profile.html')
     return redirect(url_for('login'))
+    
+
 
 
 #SQL STATEMENT COLLECTION BELOW
+
+    
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -6,4 +6,28 @@
 <h1 class="h2">Dashboard</h1>
 <p>Welcome  {{ email }}!</p>
 <p>Admin account: {{ is_admin }}!</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>product_id</th>
+            <th>product_name</th>
+            <th>base_price</th>
+            <th>discount_id</th>
+            <th>supplier_id</th>
+        </tr>
+    </thead>    
+    <tbody>
+    {% for row in data %}    
+            <tr>
+                <td>{{row[0]}}</td>
+                <td>{{row[1]}}</td>
+                <td>{{row[2]}}</td>
+                <td>{{row[3]}}</td>
+                <td>{{row[4]}}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
 {% endblock %}
