@@ -141,22 +141,27 @@ def admin_add_supplier():
     
 @app.route('/admin_add_product', methods=['GET', 'POST'])
 def admin_add_product():
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute('SELECT DISTINCT(supplier_name), supplier_id FROM suppliers')
+    supplier_list = cursor.fetchall()
+
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute('SELECT products.product_id, products.product_name, products.base_price, suppliers.supplier_name FROM products INNER JOIN suppliers ON products.supplier_id = suppliers.supplier_id;')
+    data = cursor.fetchall()
+
+
     if 'loggedin' in session:
             if session['is_admin'] == True:
+                #supplier_data = [i for sub in supplier_unpatched for i in sub]  # convert from list to tuple
+                #print(supplier_list)
+                #print(supplier_unpatched)
 
-                cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-                cursor.execute("SELECT products.product_id, products.product_name, products.base_price, suppliers.supplier_name FROM products INNER JOIN suppliers ON products.supplier_id = suppliers.supplier_id;")
-                data = cursor.fetchall()
-                cursor.execute("SELECT DISTINCT(supplier_name) FROM suppliers")
-                supplier_unpatched = cursor.fetchall()
-                supplier_data = [i for sub in supplier_unpatched for i in sub]  # convert from list to tuple
                 if request.method == 'POST' and 'product_name' in request.form and 'base_price' in request.form and 'quantity' in request.form:
                     product_name = request.form['product_name']
                     base_price = request.form['base_price']
-                    #supplier = supplier_data['selected_supplier_data']
                     quantity = request.form['quantity']
-                    #supplier_id_in_suppliers = cursor.fetchall('SELECT supplier_id FROM suppliers WHERE supplier_name =  %s', (supplier,))
-                    supplier_id_in_suppliers = 1
+                    supplier_id = request.form['supplier_id']
+
                     if not product_name or not base_price or not quantity:
                         flash('Please fill out the form!')
 
@@ -166,9 +171,9 @@ def admin_add_product():
 
                         while (loop <= int(quantity)):
 
-                            cursor.execute("INSERT INTO products (product_name, base_price, supplier_id) VALUES (%s,%s,%s)" , (product_name, base_price, supplier_id_in_suppliers))                        
+                            cursor.execute("INSERT INTO products (product_name, base_price, supplier_id) VALUES (%s,%s, %s)" , (product_name, base_price, supplier_id))                        
                             conn.commit()
-                            print(loop)
+                            #print(loop)
                             flash('You have successfully added the product, please refresh the page in order to see the updated list!')
                             loop = loop + 1
 
@@ -177,7 +182,7 @@ def admin_add_product():
                             print("Finally finished!") 
                             flash('You have successfully added the product, please refresh the page in order to see the updated list!')
                             
-                return render_template('admin_add_product.html', data=data, supplier_data=supplier_data)
+                return render_template('admin_add_product.html', data=data, supplier_list=supplier_list)
             
             else:
 
@@ -186,6 +191,13 @@ def admin_add_product():
     return redirect(url_for('login'))
 
 #SQL STATEMENT COLLECTION BELOW
+
+
+
+
+
+
+
 
     
 if __name__ == "__main__":
