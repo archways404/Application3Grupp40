@@ -139,8 +139,42 @@ def admin_add_supplier():
                 return render_template('profile.html')
     return redirect(url_for('login'))
     
+@app.route('/admin_add_product', methods=['GET', 'POST'])
+def admin_add_product():
+    if 'loggedin' in session:
+            if session['is_admin'] == True:
+                cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+                cursor.execute("SELECT products.product_id, products.product_name, products.base_price, suppliers.supplier_name FROM products INNER JOIN suppliers ON products.supplier_id = suppliers.supplier_id;")
+                data = cursor.fetchall()
+                if request.method == 'POST' and 'product_name' in request.form and 'base_price' in request.form and 'supplier_name' in request.form and 'quantity' in request.form:
+                    product_name = request.form['product_name']
+                    base_price = request.form['base_price']
+                    supplier_name = request.form['supplier_name']
+                    quantity = request.form['quantity']
+                    if not product_name or not base_price or not supplier_name or not quantity:
+                        flash('Please fill out the form!')
+                    else:
+                        # LOOP
+                        human_quantity = quantity - 1
+                        # if user wants to add 3 then the computer will start with the first one as a 0 so if you were to put 3 in our text field then it will run 4 times
+                        # h_q is just to make sure that the user input is correct
+                        for x in range(quantity):
+                            if x == human_quantity: break
+                            #cursor.execute('SELECT * FROM suppliers WHERE supplier_name = %s', (supplier_name,))
+                            #cursor.execute("INSERT INTO suppliers (supplier_name, supplier_phone, supplier_adress) VALUES (%s,%s,%s)", (supplier_name, supplier_phone, supplier_adress))
+                            #conn.commit()
+                            print(x)
+                            human_quantity + 1
+                        else:
+                            print("Finally finished!") 
+                            flash('You have successfully added the product, please refresh the page in order to see the updated list!')
+                return render_template('admin_add_product.html', data=data)
+            else:
+                return render_template('profile.html')
+    return redirect(url_for('login'))
 
 #SQL STATEMENT COLLECTION BELOW
+
 
     
 if __name__ == "__main__":
