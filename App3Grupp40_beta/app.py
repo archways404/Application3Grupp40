@@ -152,9 +152,6 @@ def admin_add_product():
 
     if 'loggedin' in session:
             if session['is_admin'] == True:
-                #supplier_data = [i for sub in supplier_unpatched for i in sub]  # convert from list to tuple
-                #print(supplier_list)
-                #print(supplier_unpatched)
 
                 if request.method == 'POST' and 'product_name' in request.form and 'base_price' in request.form and 'quantity' in request.form:
                     product_name = request.form['product_name']
@@ -173,7 +170,6 @@ def admin_add_product():
 
                             cursor.execute("INSERT INTO products (product_name, base_price, supplier_id) VALUES (%s,%s, %s)" , (product_name, base_price, supplier_id))                        
                             conn.commit()
-                            #print(loop)
                             flash('You have successfully added the product, please refresh the page in order to see the updated list!')
                             loop = loop + 1
 
@@ -193,6 +189,54 @@ def admin_add_product():
 #SQL STATEMENT COLLECTION BELOW
 
 
+@app.route('/admin_add_edit_product', methods=['GET', 'POST'])
+def admin_add_edit_product():
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute('SELECT DISTINCT(supplier_name), supplier_id FROM suppliers')
+    supplier_list = cursor.fetchall()
+
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute('SELECT products.product_id, products.product_name, products.base_price, suppliers.supplier_name FROM products INNER JOIN suppliers ON products.supplier_id = suppliers.supplier_id;')
+    data = cursor.fetchall()
+
+
+    if 'loggedin' in session:
+            if session['is_admin'] == True:
+                #Plan is for me to not render the right things so that you can't change it
+            
+                if request.method == 'POST' and 'supplier_id' in request.form:
+                    if request.method == 'POST' and 'product_name' in request.form and 'base_price' in request.form and 'quantity' in request.form:
+                        product_name = request.form['product_name']
+                        base_price = request.form['base_price']
+                        quantity = request.form['quantity']
+                        supplier_id = request.form['supplier_id']
+
+                        if not product_name or not base_price or not quantity:
+                            flash('Please fill out the form!')
+
+                        else:
+
+                            loop = 1
+
+                            while (loop <= int(quantity)):
+
+                                cursor.execute("INSERT INTO products (product_name, base_price, supplier_id) VALUES (%s,%s, %s)" , (product_name, base_price, supplier_id))                        
+                                conn.commit()
+                                flash('You have successfully added the product, please refresh the page in order to see the updated list!')
+                                loop = loop + 1
+
+                            else:
+                                print(int(quantity))
+                                print("Finally finished!") 
+                                flash('You have successfully added the product, please refresh the page in order to see the updated list!')
+                                
+                    return render_template('admin_add_edit_product.html', data=data)
+                return render_template('admin_add_edit_product.html', data=data, supplier_list=supplier_list)
+            else:
+
+                return render_template('profile.html')
+            
+    return redirect(url_for('login'))
 
 
 
