@@ -150,13 +150,11 @@ def admin_add_product():
                 cursor.execute("SELECT DISTINCT(supplier_name) FROM suppliers")
                 supplier_unpatched = cursor.fetchall()
                 supplier_data = [i for sub in supplier_unpatched for i in sub]  # convert from list to tuple
-                print(supplier_data)
                 if request.method == 'POST' and 'product_name' in request.form and 'base_price' in request.form and 'quantity' in request.form:
                     product_name = request.form['product_name']
                     base_price = request.form['base_price']
                     #supplier = supplier_data['selected_supplier_data']
                     quantity = request.form['quantity']
-                    quantity_as_int = type(int(quantity))
                     #supplier_id_in_suppliers = cursor.fetchall('SELECT supplier_id FROM suppliers WHERE supplier_name =  %s', (supplier,))
                     supplier_id_in_suppliers = 1
                     if not product_name or not base_price or not quantity:
@@ -166,17 +164,16 @@ def admin_add_product():
 
                         loop = 1
 
-                        while (quantity_as_int <= loop):
+                        while (loop <= int(quantity)):
 
                             cursor.execute("INSERT INTO products (product_name, base_price, supplier_id) VALUES (%s,%s,%s)" , (product_name, base_price, supplier_id_in_suppliers))                        
                             conn.commit()
                             print(loop)
-                            flash('You have successfully added a product!', loop)
-                            flash('You have successfully added the product, please refresh the page in order to see the updated list!', loop)
+                            flash('You have successfully added the product, please refresh the page in order to see the updated list!')
                             loop = loop + 1
 
                         else:
-
+                            print(int(quantity))
                             print("Finally finished!") 
                             flash('You have successfully added the product, please refresh the page in order to see the updated list!')
                             
