@@ -192,28 +192,37 @@ def admin_add_edit_product():
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute('SELECT DISTINCT(supplier_name), supplier_id FROM suppliers')
     supplier_list = cursor.fetchall()
-    #cursor.execute('SELECT FROM products product_id, product_name, base_price, suppliers.supplier_name FROM products INNER JOIN suppliers ON products.supplier_id = suppliers.supplier_id;')
-    #data = cursor.fetchall()
-    #cursor.execute('SELECT product_name FROM products WHERE supplier_id = %s'), (supplier_id)
-    #data = cursor.fetchall()
-
-
+    cursor.execute('SELECT distinct(product_name), supplier_id FROM products') 
+    data = cursor.fetchall()
 
 
     if 'loggedin' in session:
             if session['is_admin'] == True:
                 #Plan is for me to not render the right things so that you can't change it
-                cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-                cursor.execute('SELECT DISTINCT(supplier_name), supplier_id FROM suppliers')
-                supplier_list = cursor.fetchall()
-                if request.method == 'POST' and 'supplier_id' in request.form:
-                    supplier_id = request.form['supplier_id']
-                    cursor.execute('SELECT distinct(product_name) FROM products WHERE supplier_id = %s', (supplier_id,))
-                    product_name_for_selected_supplier_id = cursor.fetchall()
-                    print (product_name_for_selected_supplier_id)
+                if request.method == 'POST':
+                    supplier_id = request.form.get('supplier_id')
+                    product_name = request.form.get('product_name')
+                    print(supplier_id)
+                    print(product_name)
+                    
+                    #cursor.execute('SELECT distinct(product_name) FROM products WHERE supplier_id = %s', supplier_id)
+                    #matched_data = cursor.fetchall()
 
-                    return render_template('admin_add_edit_product.html', supplier_list=supplier_list, product_name_for_selected_supplier_id=product_name_for_selected_supplier_id)
+                return render_template('admin_add_edit_product.html', supplier_list=supplier_list, data=data)
 
+
+                #if request.method == 'POST' and 'supplier_id' in request.form:
+                #        supplier_id = request.form['supplier_id']
+                #        cursor.execute('SELECT distinct(product_name) FROM products WHERE supplier_id = %s', (supplier_id,))
+                #        product_name_for_selected_supplier_id = cursor.fetchall()
+                #        print (product_name_for_selected_supplier_id)
+
+                        
+                    
+
+                return render_template('admin_add_edit_product.html', supplier_list=supplier_list, product_name_for_selected_supplier_id=product_name_for_selected_supplier_id)
+                
+                #elif request.method == 'POST' and 'supplier_id' in request.form:
                     #if request.method == 'POST' and 'supplier_id' in request.form:
 
 
@@ -243,18 +252,13 @@ def admin_add_edit_product():
                     #return render_template('admin_add_edit_product.html')
 
 
-                return render_template('admin_add_edit_product.html', supplier_list=supplier_list)
+                #return render_template('admin_add_edit_product.html', supplier_list=supplier_list)
             else:
 
                 return render_template('profile.html')
             
     return redirect(url_for('login'))
 
-
-#def admin_add_edit_product_dep2():
-#    if request.method == 'POST' and 'product_name_for_selected_supplier_id' in request.form and 'supplier_id' in request.form:
-#
-#        return render_template('admin_add_edit_product.html', supplier_list=supplier_list, product_name_for_selected_supplier_id=product_name_for_selected_supplier_id)
     
 if __name__ == "__main__":
     app.run(debug=True)
