@@ -1,0 +1,63 @@
+{% extends 'layout_admin.html' %}
+  
+{% block title %}Home{% endblock %}
+  
+{% block content %}
+<h1 class="h2">Edit Discounts</h1>
+<h3> Fill out the form <h3/>
+    <form action="{{ url_for('admin_edit_discounts') }}" method="post" autocomplete="off">
+      <div class="form-group">
+        <label for="discount_name" class="cols-sm-2 control-label"> </label>
+        <div class="cols-sm-10">
+          <div class="input-group">
+            <input type="text" class="form-control" name="discount_name" id="discount_name" placeholder="Enter the discount name" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="discount_change" class="cols-sm-2 control-label"> </label>
+        <div class="cols-sm-10">
+          <div class="input-group">
+            <input type="number" class="form-control" name="discount_change" id="discount_change" min="1" max="100" placeholder="Enter the discount % without the % sign" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group ">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <input type="submit" value="submit" class="form-control btn btn-primary " name="" style="background-color: red; border-color: #a4bfd9;">
+      </div>
+    </form>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>   
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>    
+    <tbody>
+  {% for row in data %}    
+      <tr>
+        <td>{{row[0]}}</td>
+        <td>{{row[1]}}</td>
+        <td>{{row[2]}}</td>
+        <td>{{row[3]}}</td>
+      </tr>
+  {% endfor %}
+    </tbody>
+  </table>
+  {% endblock %}

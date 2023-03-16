@@ -201,10 +201,6 @@ def admin_add_edit_product():
 
     cursor.execute('select distinct(product_name) from products') 
     data_product = cursor.fetchall()
-
-    #cursor.execute('SELECT distinct(product_name), product_id FROM products') 
-    #data_beta = cursor.fetchall()
-
     if 'loggedin' in session:
         if session['is_admin'] == True:
             if request.method == 'POST' and 'supplier_id' in request.form and 'product_name' in request.form and 'quantity' in request.form and 'choice' in request.form:
@@ -225,17 +221,13 @@ def admin_add_edit_product():
                             add_product_product_name = add_product[0]
                             add_product_base_price = add_product[1]
                             add_product_supplier_id = add_product[2]
-                            print(add_product_product_name)
-                            print(add_product_base_price)
-                            print(add_product_supplier_id)
                             cursor.execute("INSERT INTO products (product_name, base_price, supplier_id) VALUES (%s,%s, %s)" , (add_product_product_name, add_product_base_price, add_product_supplier_id))                        
                             conn.commit()
                             loop = loop + 1
                         else:
-                            print(int(quantity))
-                            print("Finally finished!") 
-                            flash('You have successfully added the product, please refresh the page in order to see the updated list!')
-                    
+                            flash('You have successfully added the product!')
+                            cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
+                            info = cursor.fetchall()
                     elif choice == 'Delete':
                         loop = 1
 
@@ -251,7 +243,9 @@ def admin_add_edit_product():
 
                             loop = loop + 1
                         else:
-                            flash('You have successfully removed the product or products, please refresh the page in order to see the updated list!')
+                            flash('You have successfully removed the product or products!')
+                            cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
+                            info = cursor.fetchall()
                     else:
                         flash("Please select option as either ADD or DELETE!")
           
@@ -261,6 +255,104 @@ def admin_add_edit_product():
 
             return render_template('profile.html')
         
+    return redirect(url_for('login'))
+
+@app.route('/admin_edit_discounts', methods=['GET', 'POST'])
+def admin_edit_discounts():
+    if 'loggedin' in session:
+        if session['is_admin'] == True:
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            cursor.execute("SELECT discount_name, discount_change, start_date, end_date FROM discounts")
+            data = cursor.fetchall()
+            if request.method == 'POST' and 'discount_name' in request.form and 'discount_change' in request.form:           
+                discount_name = request.form['discount_name']
+                discount_change = request.form['discount_change']
+                discount_changed = int(discount_change)
+                base_change = 100
+                base_changed = int(base_change)
+                discount_change_to_dec = base_changed - discount_changed
+                discount_change_in_dec = discount_change_to_dec / base_changed
+                cursor.execute('SELECT * FROM discounts WHERE discount_name = %s', (discount_name,))
+                doubleentry = cursor.fetchone()
+                if doubleentry:
+                    flash('Name already exists!')
+                elif not discount_name or not discount_change:
+                    flash('Please fill out the form!')
+                else:
+                    cursor.execute("INSERT INTO discounts (discount_name, discount_change) VALUES (%s,%s)", (discount_name, discount_change_in_dec))
+                    conn.commit()
+                    flash('You have successfully created the discount!')
+                    cursor.execute("SELECT discount_name, discount_change, start_date, end_date FROM discounts")
+                    data = cursor.fetchall()
+            return render_template('admin_edit_discounts.html', data=data)
+        else:
+            return render_template('profile.html')
+    return redirect(url_for('login'))
+
+@app.route('/admin_apply_discounts', methods=['GET', 'POST'])
+def admin_apply_discounts():
+    if 'loggedin' in session:
+        if session['is_admin'] == True:
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            cursor.execute("SELECT * FROM discounts")
+            data = cursor.fetchall()
+
+            cursor.execute('select distinct(discount_name) from discounts')
+            discount_list = cursor.fetchall()
+
+            cursor.execute('select distinct(product_name) from products')
+            product_data = cursor.fetchall()
+
+            if request.method == 'POST' and 'discount_name' in request.form and 'product_name' in request.form and 'choice' in request.form and 'start_date' in request.form and 'end_date' in request.form:           
+                discount_name = request.form.get('discount_name')
+                d_products = request.form.get('product_name')
+                choice = request.form.get('choice')
+                start_date = request.form['start_date']
+                end_date = request.form['end_date']
+
+
+                if choice == 'Apply':
+                    cursor.execute('select discount_change from discounts where discount_name = %s', (discount_name,))
+                    discount_change_list = cursor.fetchall()
+                    discount_change_list_2 = discount_change_list[0]
+                    discount_change = discount_change_list_2[0]
+                    cursor.execute('INSERT INTO discounts (discount_name, discount_change, start_date, end_date, d_products) VALUES (%s,%s,%s,%s,%s)', (discount_name, discount_change, start_date, end_date, d_products,))
+                    conn.commit()
+                    flash('You have successfully created the discount!')
+                    cursor.execute("SELECT * FROM discounts")
+                    data = cursor.fetchall()
+
+                if choice == 'Remove':
+                    cursor.execute('select discount_change from discounts where discount_name = %s', (discount_name,))
+                    discount_change_list = cursor.fetchall()
+                    discount_change_list_2 = discount_change_list[0]
+                    discount_change = discount_change_list_2[0]
+
+                    cursor.execute('SELECT discount_id, discount_name, discount_change, start_date, end_date, d_products FROM discounts WHERE discount_name = %s and discount_change = %s and start_date = %s and end_date = %s and d_products = %s', (discount_name, discount_change, start_date, end_date, d_products,))
+                    #cursor.execute('SELECT discount_name, discount_change, start_date, end_date, d_products FROM discounts WHERE discount_name = %s and discount_change = %s and start_date = %s and end_date = %s and d_products = %s', (discount_name, discount_change, start_date, end_date, d_products,))
+                    not_in_table = cursor.fetchone()
+                    print(not_in_table)
+
+                    if not_in_table == None:
+                        flash("Entry not in table, please fill out the form again!")
+                        cursor.execute("SELECT * FROM discounts")
+                        data = cursor.fetchall()
+
+                    else:
+                        cursor.execute('DELETE FROM discounts WHERE discount_name = %s and discount_change = %s and start_date = %s and end_date = %s and d_products = %s', (discount_name, discount_change, start_date, end_date, d_products,))
+                        conn.commit()
+                        flash("Discount removed from the database!")
+                        cursor.execute("SELECT * FROM discounts")
+                        data = cursor.fetchall()
+
+                if choice == 'Select':  
+                    flash('Please fill out the form!')
+                    cursor.execute("SELECT * FROM discounts")
+                    data = cursor.fetchall()
+
+            return render_template('admin_apply_discounts.html', data=data, product_data=product_data, discount_list=discount_list)
+        else:
+            return render_template('profile.html')
     return redirect(url_for('login'))
 
     
