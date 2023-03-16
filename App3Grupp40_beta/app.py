@@ -188,54 +188,87 @@ def admin_add_product():
 
 @app.route('/admin_add_edit_product', methods=['GET', 'POST'])
 def admin_add_edit_product():
-    #WORK IN PROGRESS HERE!!!!
-    
+
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
+    info = cursor.fetchall()
+
     cursor.execute('SELECT DISTINCT(supplier_name), supplier_id FROM suppliers')
     supplier_list = cursor.fetchall()
-    cursor.execute('SELECT distinct(product_name), supplier_id FROM products') 
+    
+    cursor.execute('SELECT * FROM products') 
     data = cursor.fetchall()
 
+    #cursor.execute('select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name') 
+    #data_beta = cursor.fetchall()
+
+    cursor.execute('SELECT distinct(product_name), product_id FROM products') 
+    data_beta = cursor.fetchall()
+
     if 'loggedin' in session:
-            if session['is_admin'] == True:
-
-                if request.method == 'POST' and 'supplier_id' in request.form and 'quantity' in request.form and 'choice' in request.form:
-                    supplier_id = request.form.get('supplier_id')
-                    product_id = request.form.get('product_id')
-                    quantity = request.form.get('quantity')
-                    choice = request.form.get('choice')
-                    cursor.execute('SELECT DISTINCT(base_price) FROM products WHERE product_id = %s', (product_id))
-                    base_price = cursor.fetchall()
-                    cursor.execute('SELECT product_name FROM products WHERE product_id = %s', (product_id)) #gives product_name
-                    product_name = cursor.fetchall()
-                    print(base_price)
-                    print(product_name)
-
-
-                    if not supplier_id or not product_id or not quantity or not choice:
+        if session['is_admin'] == True:
+            if request.method == 'POST' and 'supplier_id' in request.form and 'product_id' in request.form and 'quantity' in request.form and 'choice' in request.form:
+                supplier_id = request.form.get('supplier_id')
+                product_id = request.form.get('product_id')
+                quantity = request.form.get('quantity')
+                choice = request.form.get('choice')
+                if not supplier_id or not product_id or not quantity or not choice:
                         flash('Please fill out the form!')
-                    else:
-                        
+                else:
+                    if choice == 'Add':
+
                         loop = 1
-
                         while (loop <= int(quantity)):
-
-                            cursor.execute("INSERT INTO products (product_name, base_price, supplier_id) VALUES (%s,%s, %s)" , (product_name, base_price, supplier_id))                        
+                            cursor.execute('SELECT product_name, base_price, supplier_id FROM products WHERE product_id =  %s' , (product_id,))
+                            add_product_list = cursor.fetchall()
+                            add_product = add_product_list[0]
+                            add_product_product_name = add_product[0]
+                            add_product_base_price = add_product[1]
+                            add_product_supplier_id = add_product[2]
+                            print(add_product_product_name)
+                            print(add_product_base_price)
+                            print(add_product_supplier_id)
+                            cursor.execute("INSERT INTO products (product_name, base_price, supplier_id) VALUES (%s,%s, %s)" , (add_product_product_name, add_product_base_price, add_product_supplier_id))                        
                             conn.commit()
-                            flash('You have successfully added the product, please refresh the page in order to see the updated list!')
                             loop = loop + 1
-
                         else:
                             print(int(quantity))
                             print("Finally finished!") 
                             flash('You have successfully added the product, please refresh the page in order to see the updated list!')
-                                
-                return render_template('admin_add_edit_product.html', supplier_list=supplier_list, data=data)
-               
-            else:
+                    
+                    elif choice == 'Delete':
+                        loop = 1
 
-                return render_template('profile.html')
-            
+                        while (loop <= int(quantity)):
+
+                            cursor.execute('SELECT product_name, base_price, supplier_id FROM products WHERE product_id =  %s' , (product_id,))
+                            delete_product_list = cursor.fetchall()
+                            delete_product = delete_product_list[0]
+                            delete_product_product_name = delete_product[0]
+                            print(delete_product_product_name)
+
+                            cursor.execute('SELECT product_id FROM products WHERE product_name = %s' , (delete_product_product_name,))
+                            delete_product_list = cursor.fetchall()
+                            delete_product = delete_product_list[0]
+                            delete_product_id = delete_product[0]
+                            print(delete_product_id)
+
+                            cursor.execute('DELETE FROM products WHERE product_id =  %s' , (delete_product_id,))                    
+
+                            print(int(quantity))
+                            loop = loop + 1
+                        else:
+                            print(int(quantity))
+                            flash('You have successfully removed the product or products, please refresh the page in order to see the updated list!')
+                    else:
+                        flash("Please select option as either ADD or DELETE!")
+          
+            return render_template('admin_add_edit_product.html', supplier_list=supplier_list, data=data, data_beta=data_beta, info=info)
+               
+        else:
+
+            return render_template('profile.html')
+        
     return redirect(url_for('login'))
 
     

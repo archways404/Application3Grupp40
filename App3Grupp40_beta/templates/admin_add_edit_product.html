@@ -8,30 +8,31 @@
 
 <h3>Fill out the form<h3/>
         <form method="post" id="form-data">
-                    
-            <select id="supplier_id" name="supplier_id">
-                {% for j in supplier_list %}
-                    <option value="{{j[1]}}" selected='selected'>{{j[0]}}</option>
-                {% endfor %}
-            </select>
-
-            <select id="product_id" name="product_id">
-                {% for d in data %}
-                    <option value="{{d[1]}}" selected='selected'>{{d[0]}}</option>
-                {% endfor %}
-            </select>
+            <p>Select supplier  </p>       
+                <select id="supplier_id" name="supplier_id">
+                    {% for j in supplier_list %}
+                        <option value="{{j[1]}}" selected='selected'>{{j[0]}}</option>
+                    {% endfor %}
+                </select>
+            <p>Select product  </p>
+                <select id="product_id" name="product_id">
+                    {% for d in data_beta %}
+                        <option value="{{d[1]}}" selected='selected'>{{d[0]}}</option>
+                    {% endfor %}
+                </select>
                       
           <div class="form-group">
             <label for="quantity" class="cols-sm-2 control-label"></label>
             <div class="cols-sm-10">
               <div class="input-group">
-                <p>Amount:</p>
-                <input type="number" class="form-control" name="quantity" id="quantity" value="0">
+                <p>Amount </p>
+                <input type="number" class="form-control" name="quantity" id="quantity" value="1">
               </div>
             </div>
           </div>
-
+          <p>Option </p>
           <select name="choice">
+            <option value="Select">SELECT</option>
             <option value="Add">ADD</option>
             <option value="Delete">DELETE</option>
           </select>
@@ -49,7 +50,7 @@
             {% endfor %}
             {% endif %}
             {% endwith %}
-            <input type="submit" style="background-color: red; border-color: #a4bfd9;">
+            <button type="submit" placeholder="Submit" style="background-color: green; border-color: #a4bfd9;">Submit</button>
           </div>
         </form>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
@@ -57,22 +58,19 @@
 <table>
   <thead>
     <tr>
-      <th>product_id</th>
-      <th>product_name</th>
-      <th>base_price</th>
-      <th>supplier</th>
-      <th>quantity (not atm)</th>
+      <th>Product  </th>
+      <th>Price  </th>
+      <th>Supplier  </th>
+      <th>Amount  </th>
     </tr>
   </thead>    
   <tbody>
-{% for row in data %}    
+{% for row in info %}    
     <tr>
       <td>{{row[0]}}</td>
       <td>{{row[1]}}</td>
       <td>{{row[2]}}</td>
       <td>{{row[3]}}</td>
-      <td>{{row[4]}}</td>
-
     </tr>
 {% endfor %}
   </tbody>
