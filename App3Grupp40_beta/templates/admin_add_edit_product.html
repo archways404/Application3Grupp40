@@ -15,28 +15,12 @@
                 {% endfor %}
             </select>
 
-            <input type="submit" value="apply_supplier" name="submit" style="background-color: red; border-color: #a4bfd9;">
-            
-            
-            
-            
-            <div id="not_visible_until_after_click">
-
-            
-            <select id="product_name" name="product_name">
+            <select id="product_id" name="product_id">
                 {% for d in data %}
                     <option value="{{d[1]}}" selected='selected'>{{d[0]}}</option>
                 {% endfor %}
             </select>
-
-            <input type="submit" value="apply_product" name="submit" style="background-color: red; border-color: #a4bfd9;">
-            
-        
-        
-        
-            </div>
-            
-           
+                      
           <div class="form-group">
             <label for="quantity" class="cols-sm-2 control-label"></label>
             <div class="cols-sm-10">
