@@ -37,12 +37,22 @@
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="#">
-    <i class="fas fa-shopping-cart"></i>
+                <i class="fas fa-shopping-cart"></i>
                   Products
                 </a>
               </li>
+
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('user_view_cart') }}">
+                <i class="fas fa-shopping-cart"></i>
+                View Cart
+              </a>
+            </li>
+
+
             </ul>
-   </div>
+  </div>
         </nav>
   
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">

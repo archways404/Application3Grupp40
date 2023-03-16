@@ -353,6 +353,112 @@ def admin_show_discount_history():
             return render_template('profile.html')
     return redirect(url_for('login'))
 
+@app.route('/admin_view_cart', methods=['GET', 'POST'])
+def admin_view_cart():
+    if 'loggedin' in session:
+        if session['is_admin'] == True:
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            cursor.execute("SELECT * from orders")
+            data = cursor.fetchall()
+
+            cursor.execute("SELECT order_id from orders WHERE is_paid = False")
+            unconfirmed_order = cursor.fetchall()
+
+            if request.method == 'POST' and 'choice' in request.form:           
+                choice = request.form.get('choice')
+                order_id_select = request.form.get('order_id_select')
+
+                if choice == 'APPLY':
+
+                    cursor.execute('UPDATE orders SET is_paid = True WHERE order_id = %s', (order_id_select,))
+                    conn.commit()
+                    flash("yeah baby, order confirmed!")
+                    cursor.execute("SELECT * from orders")
+                    data = cursor.fetchall()
+
+                if choice == 'REMOVE':
+
+                    cursor.execute("SELECT product_name FROM orders WHERE order_id = %s", (order_id_select,))
+                    p_name = cursor.fetchall()
+                    p_name_1 = p_name[0]
+                    p_name_list = p_name_1[0]
+                    
+                    cursor.execute("SELECT is_paid FROM orders WHERE order_id = %s", (order_id_select,))
+                    status_list2 = cursor.fetchall()
+                    status_list1 = status_list2[0]
+                    status = status_list1[0]
+
+                    if status == True:
+                        flash("Error. You can't change orders that have been paid!")
+                    if status == False:
+                        cursor.execute('UPDATE orders SET is_paid = Null WHERE order_id = %s', (order_id_select,))
+
+                        for i in range(len(p_name_list)):
+                            cursor.execute("INSERT into products (product_name, base_price, supplier_id) SELECT DISTINCT(product_name), base_price, supplier_id FROM products WHERE product_name = %s", (p_name_list[i],))
+                            conn.commit()
+                            print(p_name_list[i])
+                        flash('You have successfully removed the product from users cart! AND I AM ON FUCKING FIREEEEEEEE')
+                        cursor.execute("SELECT * from orders")
+                        data = cursor.fetchall()
+
+                if choice == 'SELECT':
+                    flash('Please select an option!')
+                
+                if choice == 'UNCONFIRM':
+                    cursor.execute('UPDATE orders SET is_paid = False WHERE order_id = %s', (order_id_select,))
+                    conn.commit()
+
+                    flash("THIS WILL BE REMOVED BEFORE DEADLINE!!")
+
+                
+            return render_template('admin_view_cart.html', data=data, unconfirmed_order=unconfirmed_order)
+        else:
+            return render_template('profile.html')
+    return redirect(url_for('login'))
+
+
+@app.route('/user_view_cart', methods=['GET', 'POST'])
+def user_view_cart():
+    if 'loggedin' in session:
+        if session['is_admin'] == False:
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+            cursor.execute("SELECT * from orders")
+            data = cursor.fetchall()
+
+            cursor.execute("SELECT * from orders")
+            data = cursor.fetchall()
+
+            active_user = session['email']
+            user = session['customer_id']
+            print(active_user)
+            print(user)
+
+
+
+            if request.method == 'POST' and 'choice' in request.form:           
+                choice = request.form.get('choice')
+                if choice == 'PAY':
+                        flash("You have purchased the item or items!")
+                if choice == 'REMOVE':
+                    if status == True:
+                        flash("Error. You can't change orders that have been purchased!")
+                    if status == False:
+                        flash("You have removed the item or items from the cart!")
+                if choice == 'SELECT':
+                    flash('Please select an option!')
+            return render_template('user_view_cart.html', data=data, active_user=active_user)
+        else:
+            return render_template('profile.html')
+    return redirect(url_for('login'))
+
+
     
 if __name__ == "__main__":
     app.run(debug=True)
+
+#note we need to add username to Orders
+
+#note product name in order can be a bit of an issue since we have to store multiple product names in it, so ex:
+# if you order 2 iMac, then the value will be {iMac, iMac} - this actually works better for us lol - either way / remove "quantity" and add their username to that row instead!
+# we need their username in order to be able to create their carts
