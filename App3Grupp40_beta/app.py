@@ -196,30 +196,30 @@ def admin_add_edit_product():
     cursor.execute('SELECT DISTINCT(supplier_name), supplier_id FROM suppliers')
     supplier_list = cursor.fetchall()
     
-    cursor.execute('SELECT * FROM products') 
+    cursor.execute('SELECT DISTINCT(supplier_name), supplier_id FROM suppliers') 
     data = cursor.fetchall()
 
-    #cursor.execute('select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name') 
-    #data_beta = cursor.fetchall()
+    cursor.execute('select distinct(product_name) from products') 
+    data_product = cursor.fetchall()
 
-    cursor.execute('SELECT distinct(product_name), product_id FROM products') 
-    data_beta = cursor.fetchall()
+    #cursor.execute('SELECT distinct(product_name), product_id FROM products') 
+    #data_beta = cursor.fetchall()
 
     if 'loggedin' in session:
         if session['is_admin'] == True:
-            if request.method == 'POST' and 'supplier_id' in request.form and 'product_id' in request.form and 'quantity' in request.form and 'choice' in request.form:
+            if request.method == 'POST' and 'supplier_id' in request.form and 'product_name' in request.form and 'quantity' in request.form and 'choice' in request.form:
                 supplier_id = request.form.get('supplier_id')
-                product_id = request.form.get('product_id')
+                product_name = request.form.get('product_name')
                 quantity = request.form.get('quantity')
                 choice = request.form.get('choice')
-                if not supplier_id or not product_id or not quantity or not choice:
+                if not supplier_id or not product_name or not quantity or not choice:
                         flash('Please fill out the form!')
                 else:
                     if choice == 'Add':
 
                         loop = 1
                         while (loop <= int(quantity)):
-                            cursor.execute('SELECT product_name, base_price, supplier_id FROM products WHERE product_id =  %s' , (product_id,))
+                            cursor.execute('SELECT product_name, base_price, supplier_id FROM products WHERE product_name =  %s' , (product_name,))
                             add_product_list = cursor.fetchall()
                             add_product = add_product_list[0]
                             add_product_product_name = add_product[0]
@@ -241,13 +241,7 @@ def admin_add_edit_product():
 
                         while (loop <= int(quantity)):
 
-                            cursor.execute('SELECT product_name, base_price, supplier_id FROM products WHERE product_id =  %s' , (product_id,))
-                            delete_product_list = cursor.fetchall()
-                            delete_product = delete_product_list[0]
-                            delete_product_product_name = delete_product[0]
-                            print(delete_product_product_name)
-
-                            cursor.execute('SELECT product_id FROM products WHERE product_name = %s' , (delete_product_product_name,))
+                            cursor.execute('SELECT product_id FROM products WHERE product_name = %s' , (product_name,))
                             delete_product_list = cursor.fetchall()
                             delete_product = delete_product_list[0]
                             delete_product_id = delete_product[0]
@@ -255,15 +249,13 @@ def admin_add_edit_product():
 
                             cursor.execute('DELETE FROM products WHERE product_id =  %s' , (delete_product_id,))                    
 
-                            print(int(quantity))
                             loop = loop + 1
                         else:
-                            print(int(quantity))
                             flash('You have successfully removed the product or products, please refresh the page in order to see the updated list!')
                     else:
                         flash("Please select option as either ADD or DELETE!")
           
-            return render_template('admin_add_edit_product.html', supplier_list=supplier_list, data=data, data_beta=data_beta, info=info)
+            return render_template('admin_add_edit_product.html', supplier_list=supplier_list, data=data, data_product=data_product, info=info)
                
         else:
 
