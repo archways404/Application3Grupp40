@@ -21,8 +21,6 @@ def home():
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
     data = cursor.fetchall()
-
-
     if 'loggedin' in session:
         if session['is_admin'] == True:
             return render_template('home_admin.html', email=session['email'], is_admin=session['is_admin'], data=data )
@@ -149,37 +147,26 @@ def admin_add_product():
     cursor.execute('SELECT products.product_id, products.product_name, products.base_price, suppliers.supplier_name FROM products INNER JOIN suppliers ON products.supplier_id = suppliers.supplier_id;')
     data = cursor.fetchall()
 
-
     if 'loggedin' in session:
             if session['is_admin'] == True:
-
                 if request.method == 'POST' and 'product_name' in request.form and 'base_price' in request.form and 'quantity' in request.form:
                     product_name = request.form['product_name']
                     base_price = request.form['base_price']
                     quantity = request.form['quantity']
                     supplier_id = request.form['supplier_id']
-
                     if not product_name or not base_price or not quantity:
                         flash('Please fill out the form!')
-
                     else:
-
                         loop = 1
-
                         while (loop <= int(quantity)):
-
                             cursor.execute("INSERT INTO products (product_name, base_price, supplier_id) VALUES (%s,%s, %s)" , (product_name, base_price, supplier_id))                        
                             conn.commit()
                             loop = loop + 1
-
                         else:
                             print("Finally finished!") 
                             flash('You have successfully added the product, please refresh the page in order to see the updated list!')
-                            
                 return render_template('admin_add_product.html', data=data, supplier_list=supplier_list)
-            
             else:
-
                 return render_template('profile.html')
             
     return redirect(url_for('login'))
@@ -329,7 +316,6 @@ def admin_apply_discounts():
                     discount_change = discount_change_list_2[0]
 
                     cursor.execute('SELECT discount_id, discount_name, discount_change, start_date, end_date, d_products FROM discounts WHERE discount_name = %s and discount_change = %s and start_date = %s and end_date = %s and d_products = %s', (discount_name, discount_change, start_date, end_date, d_products,))
-                    #cursor.execute('SELECT discount_name, discount_change, start_date, end_date, d_products FROM discounts WHERE discount_name = %s and discount_change = %s and start_date = %s and end_date = %s and d_products = %s', (discount_name, discount_change, start_date, end_date, d_products,))
                     not_in_table = cursor.fetchone()
                     print(not_in_table)
 
@@ -351,6 +337,18 @@ def admin_apply_discounts():
                     data = cursor.fetchall()
 
             return render_template('admin_apply_discounts.html', data=data, product_data=product_data, discount_list=discount_list)
+        else:
+            return render_template('profile.html')
+    return redirect(url_for('login'))
+
+@app.route('/admin_show_discount_history', methods=['GET', 'POST'])
+def admin_show_discount_history():
+    if 'loggedin' in session:
+        if session['is_admin'] == True:
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            cursor.execute("SELECT DISTINCT(p.product_name), d.discount_name, d.discount_change, d.start_date, d.end_date, (p.base_price * d.discount_change) AS updated_price FROM products p INNER JOIN discounts d ON p.product_name = d.d_products ORDER BY  d.discount_name, d.discount_change, d.start_date, d.end_date")
+            data = cursor.fetchall()
+            return render_template('admin_show_discount_history.html', data=data)
         else:
             return render_template('profile.html')
     return redirect(url_for('login'))
