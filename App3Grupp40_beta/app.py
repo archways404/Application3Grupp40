@@ -152,16 +152,23 @@ def admin_add_product():
                 if request.method == 'POST' and 'product_name' in request.form and 'base_price' in request.form and 'quantity' in request.form:
                     product_name = request.form['product_name']
                     base_price = request.form['base_price']
-                    quantity = request.form['quantity']
+                    quantity_base = request.form['quantity']
                     supplier_id = request.form['supplier_id']
+                    quantity = int(quantity_base)
+
+                    if (quantity >= 1):
+                        out_of_stock = False
+                    else:
+                        out_of_stock = True
+
                     if not product_name or not base_price or not quantity:
                         flash('Please fill out the form!')
                     else:
-                        loop = 1
-                        while (loop <= int(quantity)):
-                            cursor.execute("INSERT INTO products (product_name, base_price, supplier_id) VALUES (%s,%s, %s)" , (product_name, base_price, supplier_id))                        
+                        i = 1
+                        while (i <= quantity):
+                            cursor.execute("INSERT INTO products (product_name, base_price, supplier_id, out_of_stock) VALUES (%s,%s,%s, %s)" , (product_name, base_price, supplier_id, out_of_stock,))                        
                             conn.commit()
-                            loop = loop + 1
+                            i = i + 1
                         else:
                             print("Finally finished!") 
                             flash('You have successfully added the product, please refresh the page in order to see the updated list!')
@@ -188,37 +195,49 @@ def admin_add_edit_product():
 
     cursor.execute('select distinct(product_name) from products') 
     data_product = cursor.fetchall()
+
     if 'loggedin' in session:
         if session['is_admin'] == True:
             if request.method == 'POST' and 'supplier_id' in request.form and 'product_name' in request.form and 'quantity' in request.form and 'choice' in request.form:
                 supplier_id = request.form.get('supplier_id')
                 product_name = request.form.get('product_name')
-                quantity = request.form.get('quantity')
+                quantity_str = request.form.get('quantity')
                 choice = request.form.get('choice')
+                quantity= int(quantity_str)
+                
                 if not supplier_id or not product_name or not quantity or not choice:
                     flash('Please fill out the form!')
-                else:
+
+                if (quantity >= 2):
+
                     if choice == 'Add':
 
-                        loop = 1
-                        while (loop <= int(quantity)):
+                        i = 1
+                        while (i <= quantity):
+
+
+
+
+
+
                             cursor.execute('SELECT product_name, base_price, supplier_id FROM products WHERE product_name =  %s' , (product_name,))
                             add_product_list = cursor.fetchall()
                             add_product = add_product_list[0]
                             add_product_product_name = add_product[0]
                             add_product_base_price = add_product[1]
                             add_product_supplier_id = add_product[2]
-                            cursor.execute("INSERT INTO products (product_name, base_price, supplier_id) VALUES (%s,%s, %s)" , (add_product_product_name, add_product_base_price, add_product_supplier_id))                        
+                            cursor.execute("INSERT INTO products (product_name, base_price, supplier_id, out_of_stock) VALUES (%s,%s,%s,%s)" , (add_product_product_name, add_product_base_price, add_product_supplier_id, out_of_stock))                        
                             conn.commit()
-                            loop = loop + 1
+                            i = i + 1
                         else:
                             flash('You have successfully added the product!')
                             cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
                             info = cursor.fetchall()
-                    elif choice == 'Delete':
-                        loop = 1
 
-                        while (loop <= int(quantity)):
+                    if choice == 'Delete':
+
+                        i = 1
+                        while (i <= quantity):
 
                             cursor.execute('SELECT product_id FROM products WHERE product_name = %s' , (product_name,))
                             delete_product_list = cursor.fetchall()
@@ -228,7 +247,51 @@ def admin_add_edit_product():
 
                             cursor.execute('DELETE FROM products WHERE product_id =  %s' , (delete_product_id,))                    
 
-                            loop = loop + 1
+                            i = i + 1
+                            
+                        else:
+                            flash('You have successfully removed the product or products!')
+                            cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
+                            info = cursor.fetchall()
+                    else:
+                        flash("Please select option as either ADD or DELETE!")
+
+                else:
+
+                    if choice == 'Add':
+
+                        i = 1
+                        while (i <= quantity):
+
+                            cursor.execute('SELECT product_name, base_price, supplier_id FROM products WHERE product_name =  %s' , (product_name,))
+                            add_product_list = cursor.fetchall()
+                            add_product = add_product_list[0]
+                            add_product_product_name = add_product[0]
+                            add_product_base_price = add_product[1]
+                            add_product_supplier_id = add_product[2]
+                            cursor.execute("INSERT INTO products (product_name, base_price, supplier_id, out_of_stock) VALUES (%s,%s,%s,%s)" , (add_product_product_name, add_product_base_price, add_product_supplier_id, out_of_stock))                        
+                            conn.commit()
+                            i = i + 1
+                        else:
+                            flash('You have successfully added the product!')
+                            cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
+                            info = cursor.fetchall()
+
+                    if choice == 'Delete':
+
+                        i = 1
+                        while (i <= quantity):
+
+                            cursor.execute('SELECT product_id FROM products WHERE product_name = %s' , (product_name,))
+                            delete_product_list = cursor.fetchall()
+                            delete_product = delete_product_list[0]
+                            delete_product_id = delete_product[0]
+                            print(delete_product_id)
+
+                            cursor.execute('DELETE FROM products WHERE product_id =  %s' , (delete_product_id,))                    
+
+                            i = i + 1
+                            
                         else:
                             flash('You have successfully removed the product or products!')
                             cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
@@ -372,17 +435,12 @@ def admin_view_cart():
 
                     cursor.execute('UPDATE orders SET is_paid = True WHERE order_id = %s', (order_id_select,))
                     conn.commit()
-                    flash("yeah baby, order confirmed!")
+                    flash("Order has been confirmed!")
                     cursor.execute("SELECT * from orders")
                     data = cursor.fetchall()
 
                 if choice == 'REMOVE':
 
-                    cursor.execute("SELECT product_name FROM orders WHERE order_id = %s", (order_id_select,))
-                    p_name = cursor.fetchall()
-                    p_name_1 = p_name[0]
-                    p_name_list = p_name_1[0]
-                    
                     cursor.execute("SELECT is_paid FROM orders WHERE order_id = %s", (order_id_select,))
                     status_list2 = cursor.fetchall()
                     status_list1 = status_list2[0]
@@ -391,24 +449,58 @@ def admin_view_cart():
                     if status == True:
                         flash("Error. You can't change orders that have been paid!")
                     if status == False:
-                        cursor.execute('UPDATE orders SET is_paid = Null WHERE order_id = %s', (order_id_select,))
+                        
 
-                        for i in range(len(p_name_list)):
-                            cursor.execute("INSERT into products (product_name, base_price, supplier_id) SELECT DISTINCT(product_name), base_price, supplier_id FROM products WHERE product_name = %s", (p_name_list[i],))
+                        cursor.execute("SELECT product FROM cart WHERE ord_id = %s", (order_id_select,))
+                        product_list = cursor.fetchall()
+
+                        i = 0
+                        size_of_product_list = len(product_list)
+                        while i < size_of_product_list:
+
+                            active_product_array = product_list[i]
+                            active_product = active_product_array[0]
+                            print(active_product)
+
+                            cursor.execute("SELECT count(product) FROM cart WHERE product=%s AND ord_id = %s", (active_product, order_id_select,))
+                            product_amount2 = cursor.fetchall()
+                            product_amount1 = product_amount2[0]
+                            product_amount = product_amount1[0]
+                            print(product_amount)
+
+                            cursor.execute('SELECT cart_id FROM cart WHERE product = %s AND ord_id = %s', (active_product, order_id_select,))
+                            cart_id_list_list = cursor.fetchall()
+                            cart_id_list = cart_id_list_list[0]
+                            cart_id_active = cart_id_list[0]
+                            print(cart_id_active)
+                            
+                            #REMOVES PRODUCT(s) FROM CART
+
+                            cursor.execute('DELETE FROM cart WHERE cart_id = %s', (cart_id_active,))
                             conn.commit()
-                            print(p_name_list[i])
-                        flash('You have successfully removed the product from users cart! AND I AM ON FUCKING FIREEEEEEEE')
+
+                            #ADDING PRODUCT(s) BACK INTO STOCK FROM CART BY COPYING EXISTING PRODUCT or PRODUCTS
+                            cursor.execute("INSERT INTO products (product_name, base_price, supplier_id) SELECT DISTINCT(product_name), base_price, supplier_id FROM products WHERE product_name = %s", (active_product,))
+                            conn.commit()
+
+                            print(i)
+
+                            i = i+1
+
+                        #REMOVES ORDER FROM TABLE ORDER
+                        cursor.execute('DELETE FROM orders WHERE order_id = %s', (order_id_select,))
+                        conn.commit()
+
+                        flash("You have removed the item or items from the cart!")
+
                         cursor.execute("SELECT * from orders")
                         data = cursor.fetchall()
 
+                        cursor.execute("SELECT order_id from orders WHERE is_paid = False")
+                        unconfirmed_order = cursor.fetchall()
+
                 if choice == 'SELECT':
                     flash('Please select an option!')
-                
-                if choice == 'UNCONFIRM':
-                    cursor.execute('UPDATE orders SET is_paid = False WHERE order_id = %s', (order_id_select,))
-                    conn.commit()
-
-                    flash("THIS WILL BE REMOVED BEFORE DEADLINE!!")
 
                 
             return render_template('admin_view_cart.html', data=data, unconfirmed_order=unconfirmed_order)
@@ -427,40 +519,108 @@ def user_view_cart():
 
             cursor.execute("SELECT DISTINCT(order_id) FROM orders WHERE is_paid=false AND email = %s", (active_user,))
             unconfirmed_order = cursor.fetchall()
-            #unconfirmed_order_list2 = cursor.fetchall()
-            #unconfirmed_order_list1 = unconfirmed_order_list2[0]
-            #unconfirmed_order = unconfirmed_order_list1[0]
-            print(unconfirmed_order)
 
-
-            cursor.execute("SELECT product, COUNT(product) as Quantity, ord_id FROM cart WHERE account = %s GROUP BY product, ord_id", (active_user,))
+            cursor.execute("SELECT product, COUNT(product) as Quantity, ord_id FROM cart WHERE account = %s GROUP BY product, ord_id ORDER BY ord_id DESC", (active_user,))
             data = cursor.fetchall()
 
             if request.method == 'POST' and 'choice' in request.form:           
                 choice = request.form.get('choice')
                 order_id_from_orders = request.form.get('order_id_select')
-                print(order_id_from_orders)
 
                 cursor.execute("SELECT is_paid FROM orders WHERE order_id = %s", (order_id_from_orders,))
                 status_list2 = cursor.fetchall()
                 status_list1 = status_list2[0]
                 status = status_list1[0]
-                print(status)
 
                 if choice == 'PAY':
                         if status == True:
                             flash("Error. You can't change orders that have been purchased!")
 
+                            cursor.execute("SELECT product, COUNT(product) as Quantity, ord_id FROM cart WHERE account = %s GROUP BY product, ord_id ORDER BY ord_id DESC", (active_user,))
+                            data = cursor.fetchall()
+
+                            cursor.execute("SELECT DISTINCT(order_id) FROM orders WHERE is_paid=false AND email = %s", (active_user,))
+                            unconfirmed_order = cursor.fetchall()
+
                         if status == False:
-                            #cursor.execute("UPDATE orders SET is_paid = true WHERE email=%s", (active_user,))
+                            cursor.execute("UPDATE orders SET is_paid = true WHERE order_id = %s AND datetime = CURRENT_DATE AND email = %s", (order_id_from_orders, active_user,))
+                            conn.commit()
+
                             flash("You have purchased the item or items from the cart!")
+
+                            cursor.execute("SELECT product, COUNT(product) as Quantity, ord_id FROM cart WHERE account = %s GROUP BY product, ord_id ORDER BY ord_id DESC", (active_user,))
+                            data = cursor.fetchall()
+
+                            cursor.execute("SELECT DISTINCT(order_id) FROM orders WHERE is_paid=false AND email = %s", (active_user,))
+                            unconfirmed_order = cursor.fetchall()
 
                 if choice == 'REMOVE':
                     if status == True:
                         flash("Error. You can't change orders that have been purchased!")
+                        cursor.execute("SELECT product, COUNT(product) as Quantity, ord_id FROM cart WHERE account = %s GROUP BY product, ord_id ORDER BY ord_id DESC", (active_user,))
+                        data = cursor.fetchall()
+
+                        cursor.execute("SELECT DISTINCT(order_id) FROM orders WHERE is_paid=false AND email = %s", (active_user,))
+                        unconfirmed_order = cursor.fetchall()
 
                     if status == False:
+
+                        #REMOVE FROM CART AND ADD TO PRODUCTS
+                        cursor.execute("SELECT product FROM cart WHERE ord_id = %s", (order_id_from_orders,))
+                        product_list = cursor.fetchall()
+
+                        i = 0
+                        size_of_product_list = len(product_list)
+                        while i < size_of_product_list:
+
+                            active_product_array = product_list[i]
+                            active_product = active_product_array[0]
+                            print("active_product:")
+                            print(active_product)
+
+                            cursor.execute('UPDATE products SET out_of_stock = False WHERE product_name = %s', (active_product,))
+                            conn.commit()
+                            print("out_of_stock updated to false!")
+
+                            cursor.execute("SELECT count(product) FROM cart WHERE product=%s AND ord_id = %s", (active_product, order_id_from_orders,))
+                            product_amount2 = cursor.fetchall()
+                            product_amount1 = product_amount2[0]
+                            product_amount = product_amount1[0]
+                            print("product_amount:")
+                            print(product_amount)
+
+                            cursor.execute('SELECT out_of_stock FROM products WHERE out_of_stock = True AND product_name = %s', (active_product,))
+                            out_of_stock = cursor.fetchone()
+                            print("out_of_stock:")
+                            print(out_of_stock)
+
+                            cursor.execute('SELECT cart_id FROM cart WHERE product = %s AND ord_id = %s', (active_product, order_id_from_orders,))
+                            cart_id_list_list = cursor.fetchall()
+                            cart_id_list = cart_id_list_list[0]
+                            cart_id_active = cart_id_list[0]
+                            print("cart_id_active:")
+                            print(cart_id_active)
+
+                            cursor.execute('DELETE FROM cart WHERE cart_id = %s', (cart_id_active,))
+                            conn.commit()
+
+                            cursor.execute("INSERT INTO products (product_name, base_price, supplier_id, out_of_stock) SELECT DISTINCT(product_name), base_price, supplier_id, out_of_stock FROM products WHERE product_name = %s", (active_product,))
+                            conn.commit()
+                            print("value for i:")
+                            print(i)
+
+                            i = i+1
+
+                        cursor.execute('DELETE FROM orders WHERE order_id = %s', (order_id_from_orders,))
+                        conn.commit()
+
                         flash("You have removed the item or items from the cart!")
+
+                        cursor.execute("SELECT product, COUNT(product) as Quantity, ord_id FROM cart WHERE account = %s GROUP BY product, ord_id ORDER BY ord_id DESC", (active_user,))
+                        data = cursor.fetchall()
+
+                        cursor.execute("SELECT DISTINCT(order_id) FROM orders WHERE is_paid=false AND email = %s", (active_user,))
+                        unconfirmed_order = cursor.fetchall()
 
                 if choice == 'SELECT':
                     flash('Please select an option!')
@@ -474,11 +634,8 @@ def user_products_order():
     if 'loggedin' in session:
         if session['is_admin'] == False:
             cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-            #cursor.execute("select distinct(products.product_name), products.base_price, count(products.product_name) as amount_in_stock from products left join discounts on discounts.d_products=products.product_name group by product_name, base_price")
-            #backup tag
             
-            cursor.execute("SELECT DISTINCT(products.product_name), products.base_price, count(products.product_name) as amount_in_stock, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name, (products.base_price * discounts.discount_change) AS discounted_price FROM products left join discounts on discounts.d_products=products.product_name group by product_name, base_price, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name order by base_price DESC")
+            cursor.execute("SELECT DISTINCT(products.product_name), products.out_of_stock, products.base_price, count(products.product_name) as amount_in_stock, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name, (products.base_price * discounts.discount_change) AS discounted_price FROM products left join discounts on discounts.d_products=products.product_name group by product_name, base_price, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name, products.out_of_stock order by base_price DESC")
             data = cursor.fetchall()
 
             cursor.execute('select distinct(product_name) from products') 
@@ -488,7 +645,7 @@ def user_products_order():
             if request.method == 'POST' and 'quantity' in request.form:
                     quantity_from_form = request.form.get('quantity')
                     product_name = request.form.get('product_name')
-                    cursor.execute("SELECT DISTINCT COUNT(product_name) FROM products WHERE product_name = %s", (product_name,))
+                    cursor.execute("SELECT DISTINCT COUNT(product_name) FROM products WHERE product_name = %s AND out_of_stock=False" , (product_name,))
                     item_list = cursor.fetchall()
                     item_shorter_list = item_list[0]
                     item = item_shorter_list[0]
@@ -497,87 +654,135 @@ def user_products_order():
                     product_name = request.form.get('product_name')
                     quantity = int(quantity_from_form)
 
-                    if (item <= quantity):
+                    if (item < quantity):
                         flash('ERROR: Quantity of product is less than what you wish to order!')
-
-                    cursor.execute("SELECT order_id FROM orders WHERE datetime = CURRENT_DATE AND email= %s AND is_paid=false", (active_user,))
-                    user_active_cart = cursor.fetchone()
-                    print(user_active_cart)
-
-                    if user_active_cart ==  None:
-                        print("no active cart")
-                        print("creating one...")
-                        cursor.execute("INSERT INTO orders(datetime, is_paid, email) VALUES (CURRENT_DATE ,false ,%s)", (active_user,))
-                        #cursor.execute("UPDATE orders SET datetime = CURRENT_DATE, is_paid = false, email = %s WHERE order_id=4", (active_user,))
-                        conn.commit()
-                        ######## REMOVE COMMENTED PART TOMORROW #####
-
-                        cursor.execute("SELECT order_id FROM orders WHERE is_paid=false AND email = %s AND datetime = CURRENT_DATE", (active_user,))
-                        order_id_for_user_list2 = cursor.fetchall()
-                        order_id_for_user_list1 = order_id_for_user_list2[0]
-                        order_id_for_user = order_id_for_user_list1[0]
-                        print(order_id_for_user)
-
-                        for i in range(quantity):
-                            print(i)
-                            cursor.execute('INSERT INTO cart(account, product, ord_id) VALUES (%s,%s,%s)', (active_user, product_name, order_id_for_user))
-                            conn.commit()
-
-                            cursor.execute('SELECT product_id FROM products WHERE product_name = %s' , (product_name,))
-                            delete_product_list = cursor.fetchall()
-                            delete_product = delete_product_list[0]
-                            delete_product_id = delete_product[0]
-
-                            cursor.execute('DELETE FROM products WHERE product_id =  %s', (delete_product_id,))
-                            conn.commit()                    
-
-                        flash('You have successfully added the product to your cart!')
-                        cursor.execute("SELECT DISTINCT(products.product_name), products.base_price, count(products.product_name) as amount_in_stock, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name, (products.base_price * discounts.discount_change) AS discounted_price FROM products left join discounts on discounts.d_products=products.product_name group by product_name, base_price, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name order by base_price DESC")
-                        data = cursor.fetchall()
-
+                        return render_template('user_products_order.html', data=data, active_user=active_user, data_product=data_product)
                     else:
-                        print("active cart")
-                        cursor.execute("SELECT order_id FROM orders WHERE is_paid=false AND email = %s AND datetime = CURRENT_DATE", (active_user,))
-                        order_id_for_user_list2 = cursor.fetchall()
-                        order_id_for_user_list1 = order_id_for_user_list2[0]
-                        order_id_for_user = order_id_for_user_list1[0]
-                        print(order_id_for_user)
 
-                        for i in range(quantity):
-                            print(i)
-                            cursor.execute('INSERT INTO cart(account, product, ord_id) VALUES (%s,%s,%s)', (active_user, product_name, order_id_for_user))
+                        cursor.execute("SELECT order_id FROM orders WHERE datetime = CURRENT_DATE AND email= %s AND is_paid=false", (active_user,))
+                        user_active_cart = cursor.fetchone()
+
+                        if user_active_cart ==  None:
+                            cursor.execute("INSERT INTO orders(datetime, is_paid, email) VALUES (CURRENT_DATE ,false ,%s)", (active_user,))
                             conn.commit()
 
-                            cursor.execute('SELECT product_id FROM products WHERE product_name = %s' , (product_name,))
-                            delete_product_list = cursor.fetchall()
-                            delete_product = delete_product_list[0]
-                            delete_product_id = delete_product[0]
+                            cursor.execute("SELECT order_id FROM orders WHERE is_paid=false AND email = %s AND datetime = CURRENT_DATE", (active_user,))
+                            order_id_for_user_list2 = cursor.fetchall()
+                            order_id_for_user_list1 = order_id_for_user_list2[0]
+                            order_id_for_user = order_id_for_user_list1[0]
 
-                            cursor.execute('DELETE FROM products WHERE product_id =  %s', (delete_product_id,))
-                            conn.commit()                    
+                            for i in range(quantity):
 
-                        flash('You have successfully added the product to your cart!')
-                        cursor.execute("SELECT DISTINCT(products.product_name), products.base_price, count(products.product_name) as amount_in_stock, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name, (products.base_price * discounts.discount_change) AS discounted_price FROM products left join discounts on discounts.d_products=products.product_name group by product_name, base_price, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name order by base_price DESC")
-                        data = cursor.fetchall()
+                                cursor.execute('SELECT product_id FROM products WHERE product_name = %s' , (product_name,))
+                                delete_product_list = cursor.fetchall()
+                                delete_product = delete_product_list[0]
+                                delete_product_id = delete_product[0]
+
+                                cursor.execute('SELECT COUNT(product_id) AS counter FROM products WHERE product_name = %s' , (product_name,))
+                                delete_product_count_list = cursor.fetchall()
+                                delete_product_count = delete_product_count_list[0]
+                                delete_product_count_str = delete_product_count[0]
+                                current_stock = int(delete_product_count_str)
+
+                                cursor.execute('SELECT out_of_stock FROM products WHERE product_name = %s' , (product_name,))
+                                outofstock_line = cursor.fetchone()
+                                outofstock = outofstock_line[0]
+                                print('out of stock:')
+                                print(outofstock)
+
+                                print("Value of current_stock:")
+                                print(current_stock)
+
+                                if (current_stock > 1):
+                                    print('Current stock is greater than 1:')
+                                    print(current_stock)
+
+                                    cursor.execute('INSERT INTO cart(account, product, ord_id) VALUES (%s,%s,%s)', (active_user, product_name, order_id_for_user))
+                                    conn.commit()
+
+                                    cursor.execute('DELETE FROM products WHERE product_id =  %s', (delete_product_id,))
+                                    conn.commit()
+
+
+                                #IF this item is the last one in the stock, then update the stock to say "out of stock"
+                                if (current_stock == 1):
+                                    print('current_stock is equal to 1:')
+                                    print(current_stock)
+
+                                    cursor.execute('UPDATE products SET out_of_stock = True WHERE product_id =  %s', (delete_product_id,))
+                                    conn.commit()
+                                    print("out of stock status has been set")
+
+                            flash('You have successfully added the product to your cart!')
+                            cursor.execute("SELECT DISTINCT(products.product_name), products.base_price, count(products.product_name) as amount_in_stock, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name, (products.base_price * discounts.discount_change) AS discounted_price FROM products left join discounts on discounts.d_products=products.product_name group by product_name, base_price, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name order by base_price DESC")
+                            data = cursor.fetchall()
+
+                        else:
+                            print("active cart")
+                            cursor.execute("SELECT order_id FROM orders WHERE is_paid=false AND email = %s AND datetime = CURRENT_DATE", (active_user,))
+                            order_id_for_user_list2 = cursor.fetchall()
+                            order_id_for_user_list1 = order_id_for_user_list2[0]
+                            order_id_for_user = order_id_for_user_list1[0]
+                            print(order_id_for_user)
+
+                            for i in range(quantity):
+                                print("Value of i:")
+                                print(i)
+
+                                cursor.execute('INSERT INTO cart(account, product, ord_id) VALUES (%s,%s,%s)', (active_user, product_name, order_id_for_user))
+                                conn.commit()
+
+                                cursor.execute('SELECT product_id FROM products WHERE product_name = %s' , (product_name,))
+                                delete_product_list = cursor.fetchall()
+                                delete_product = delete_product_list[0]
+                                delete_product_id = delete_product[0]
+
+                                cursor.execute('SELECT COUNT(product_id) AS counter FROM products WHERE product_name = %s' , (product_name,))
+                                delete_product_count_list = cursor.fetchall()
+                                delete_product_count = delete_product_count_list[0]
+                                delete_product_count_str = delete_product_count[0]
+                                current_stock = int(delete_product_count_str)
+
+                                cursor.execute('SELECT out_of_stock FROM products WHERE product_name = %s' , (product_name,))
+                                product_out_of_stock = cursor.fetchone()
+
+                                print('out of stock (true or false):')
+                                print(product_out_of_stock)
+
+                                print("Value of current_stock:")
+                                print(current_stock)
+
+                                if (current_stock > 1):
+                                    print('Current stock is greater than 1:')
+                                    print(current_stock)
+
+                                    cursor.execute('INSERT INTO cart(account, product, ord_id) VALUES (%s,%s,%s)', (active_user, product_name, order_id_for_user))
+                                    conn.commit()
+
+                                    cursor.execute('DELETE FROM products WHERE product_id =  %s', (delete_product_id,))
+                                    conn.commit()
+
+                                #IF this item is the last one in the stock, then update the stock to say "out of stock"
+                                if (current_stock == 1):
+
+                                    print('current_stock is equal to 1:')
+                                    print(current_stock)
+                                    
+                                    cursor.execute('UPDATE products SET out_of_stock = true WHERE product_id =  %s', (delete_product_id,))
+                                    conn.commit()
+                                    print("out of stock status has been set")
+
+                            flash('You have successfully added the product to your cart!')
+                            cursor.execute("SELECT DISTINCT(products.product_name), products.out_of_stock, products.base_price, count(products.product_name) as amount_in_stock, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name, (products.base_price * discounts.discount_change) AS discounted_price FROM products left join discounts on discounts.d_products=products.product_name group by product_name, base_price, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name, products.out_of_stock order by base_price DESC")
+                            data = cursor.fetchall()
 
             return render_template('user_products_order.html', data=data, active_user=active_user, data_product=data_product)
         else:
             return render_template('profile.html')
     return redirect(url_for('login'))
 
-
-
-
-
-
 #cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
 #OLD shows everything but not updated price
     
 if __name__ == "__main__":
     app.run(debug=True)
-
-#note we need to add username to Orders
-
-#note product name in order can be a bit of an issue since we have to store multiple product names in it, so ex:
-# if you order 2 iMac, then the value will be {iMac, iMac} - this actually works better for us lol - either way / remove "quantity" and add their username to that row instead!
-# we need their username in order to be able to create their carts
