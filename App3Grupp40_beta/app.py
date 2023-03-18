@@ -196,7 +196,7 @@ def admin_add_edit_product():
                 quantity = request.form.get('quantity')
                 choice = request.form.get('choice')
                 if not supplier_id or not product_name or not quantity or not choice:
-                        flash('Please fill out the form!')
+                    flash('Please fill out the form!')
                 else:
                     if choice == 'Add':
 
@@ -421,38 +421,157 @@ def admin_view_cart():
 def user_view_cart():
     if 'loggedin' in session:
         if session['is_admin'] == False:
-            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-            cursor.execute("SELECT * from orders")
-            data = cursor.fetchall()
-
-            cursor.execute("SELECT * from orders")
-            data = cursor.fetchall()
 
             active_user = session['email']
-            user = session['customer_id']
-            print(active_user)
-            print(user)
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+            cursor.execute("SELECT DISTINCT(order_id) FROM orders WHERE is_paid=false AND email = %s", (active_user,))
+            unconfirmed_order = cursor.fetchall()
+            #unconfirmed_order_list2 = cursor.fetchall()
+            #unconfirmed_order_list1 = unconfirmed_order_list2[0]
+            #unconfirmed_order = unconfirmed_order_list1[0]
+            print(unconfirmed_order)
 
 
+            cursor.execute("SELECT product, COUNT(product) as Quantity, ord_id FROM cart WHERE account = %s GROUP BY product, ord_id", (active_user,))
+            data = cursor.fetchall()
 
             if request.method == 'POST' and 'choice' in request.form:           
                 choice = request.form.get('choice')
+                order_id_from_orders = request.form.get('order_id_select')
+                print(order_id_from_orders)
+
+                cursor.execute("SELECT is_paid FROM orders WHERE order_id = %s", (order_id_from_orders,))
+                status_list2 = cursor.fetchall()
+                status_list1 = status_list2[0]
+                status = status_list1[0]
+                print(status)
+
                 if choice == 'PAY':
-                        flash("You have purchased the item or items!")
+                        if status == True:
+                            flash("Error. You can't change orders that have been purchased!")
+
+                        if status == False:
+                            #cursor.execute("UPDATE orders SET is_paid = true WHERE email=%s", (active_user,))
+                            flash("You have purchased the item or items from the cart!")
+
                 if choice == 'REMOVE':
                     if status == True:
                         flash("Error. You can't change orders that have been purchased!")
+
                     if status == False:
                         flash("You have removed the item or items from the cart!")
+
                 if choice == 'SELECT':
                     flash('Please select an option!')
-            return render_template('user_view_cart.html', data=data, active_user=active_user)
+            return render_template('user_view_cart.html', data=data, active_user=active_user, unconfirmed_order=unconfirmed_order)
+        else:
+            return render_template('profile.html')
+    return redirect(url_for('login'))
+
+@app.route('/user_products_order', methods=['GET', 'POST'])
+def user_products_order():
+    if 'loggedin' in session:
+        if session['is_admin'] == False:
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+            #cursor.execute("select distinct(products.product_name), products.base_price, count(products.product_name) as amount_in_stock from products left join discounts on discounts.d_products=products.product_name group by product_name, base_price")
+            #backup tag
+            
+            cursor.execute("SELECT DISTINCT(products.product_name), products.base_price, count(products.product_name) as amount_in_stock, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name, (products.base_price * discounts.discount_change) AS discounted_price FROM products left join discounts on discounts.d_products=products.product_name group by product_name, base_price, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name order by base_price DESC")
+            data = cursor.fetchall()
+
+            cursor.execute('select distinct(product_name) from products') 
+            data_product = cursor.fetchall()
+            active_user = session['email']
+
+            if request.method == 'POST' and 'quantity' in request.form:
+                    quantity_from_form = request.form.get('quantity')
+                    product_name = request.form.get('product_name')
+                    cursor.execute("SELECT DISTINCT COUNT(product_name) FROM products WHERE product_name = %s", (product_name,))
+                    item_list = cursor.fetchall()
+                    item_shorter_list = item_list[0]
+                    item = item_shorter_list[0]
+
+                    quantity_from_form = request.form.get('quantity')
+                    product_name = request.form.get('product_name')
+                    quantity = int(quantity_from_form)
+
+                    if (item <= quantity):
+                        flash('ERROR: Quantity of product is less than what you wish to order!')
+
+                    cursor.execute("SELECT order_id FROM orders WHERE datetime = CURRENT_DATE AND email= %s AND is_paid=false", (active_user,))
+                    user_active_cart = cursor.fetchone()
+                    print(user_active_cart)
+
+                    if user_active_cart ==  None:
+                        print("no active cart")
+                        print("creating one...")
+                        cursor.execute("INSERT INTO orders(datetime, is_paid, email) VALUES (CURRENT_DATE ,false ,%s)", (active_user,))
+                        #cursor.execute("UPDATE orders SET datetime = CURRENT_DATE, is_paid = false, email = %s WHERE order_id=4", (active_user,))
+                        conn.commit()
+                        ######## REMOVE COMMENTED PART TOMORROW #####
+
+                        cursor.execute("SELECT order_id FROM orders WHERE is_paid=false AND email = %s AND datetime = CURRENT_DATE", (active_user,))
+                        order_id_for_user_list2 = cursor.fetchall()
+                        order_id_for_user_list1 = order_id_for_user_list2[0]
+                        order_id_for_user = order_id_for_user_list1[0]
+                        print(order_id_for_user)
+
+                        for i in range(quantity):
+                            print(i)
+                            cursor.execute('INSERT INTO cart(account, product, ord_id) VALUES (%s,%s,%s)', (active_user, product_name, order_id_for_user))
+                            conn.commit()
+
+                            cursor.execute('SELECT product_id FROM products WHERE product_name = %s' , (product_name,))
+                            delete_product_list = cursor.fetchall()
+                            delete_product = delete_product_list[0]
+                            delete_product_id = delete_product[0]
+
+                            cursor.execute('DELETE FROM products WHERE product_id =  %s', (delete_product_id,))
+                            conn.commit()                    
+
+                        flash('You have successfully added the product to your cart!')
+                        cursor.execute("SELECT DISTINCT(products.product_name), products.base_price, count(products.product_name) as amount_in_stock, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name, (products.base_price * discounts.discount_change) AS discounted_price FROM products left join discounts on discounts.d_products=products.product_name group by product_name, base_price, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name order by base_price DESC")
+                        data = cursor.fetchall()
+
+                    else:
+                        print("active cart")
+                        cursor.execute("SELECT order_id FROM orders WHERE is_paid=false AND email = %s AND datetime = CURRENT_DATE", (active_user,))
+                        order_id_for_user_list2 = cursor.fetchall()
+                        order_id_for_user_list1 = order_id_for_user_list2[0]
+                        order_id_for_user = order_id_for_user_list1[0]
+                        print(order_id_for_user)
+
+                        for i in range(quantity):
+                            print(i)
+                            cursor.execute('INSERT INTO cart(account, product, ord_id) VALUES (%s,%s,%s)', (active_user, product_name, order_id_for_user))
+                            conn.commit()
+
+                            cursor.execute('SELECT product_id FROM products WHERE product_name = %s' , (product_name,))
+                            delete_product_list = cursor.fetchall()
+                            delete_product = delete_product_list[0]
+                            delete_product_id = delete_product[0]
+
+                            cursor.execute('DELETE FROM products WHERE product_id =  %s', (delete_product_id,))
+                            conn.commit()                    
+
+                        flash('You have successfully added the product to your cart!')
+                        cursor.execute("SELECT DISTINCT(products.product_name), products.base_price, count(products.product_name) as amount_in_stock, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name, (products.base_price * discounts.discount_change) AS discounted_price FROM products left join discounts on discounts.d_products=products.product_name group by product_name, base_price, discounts.discount_change, discounts.start_date, discounts.end_date, discounts.discount_name order by base_price DESC")
+                        data = cursor.fetchall()
+
+            return render_template('user_products_order.html', data=data, active_user=active_user, data_product=data_product)
         else:
             return render_template('profile.html')
     return redirect(url_for('login'))
 
 
+
+
+
+
+#cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
+#OLD shows everything but not updated price
     
 if __name__ == "__main__":
     app.run(debug=True)

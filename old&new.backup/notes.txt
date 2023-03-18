@@ -1,0 +1,40 @@
+#Discounted items       
+SELECT products.product_name, products.base_price, 
+(products.base_price * discounts.discount_change) AS discounted_price, 
+discount_change, count(products.product_name) AS amount_in_stock, 
+discounts.start_date, discounts.end_date, discounts.discount_name
+FROM products 
+FULL OUTER JOIN discounts
+ON products.product_name = discounts.d_products
+WHERE products.product_name = discounts.d_products
+GROUP BY products.product_name, products.base_price, discounts.start_date, discounts.end_date, discounts.discount_name, discounts.discount_change
+#
+
+
+#
+SELECT products.product_name, products.base_price, 
+(products.base_price * discounts.discount_change) AS discounted_price, 
+d.discount_change, count(products.product_name) AS amount_in_stock, 
+discounts.start_date, discounts.end_date, discounts.discount_name
+FROM products, discounts
+WHERE products.product_name = discounts.d_products
+GROUP BY products.product_name, products.base_price, discounts.start_date, discounts.end_date, discounts.discount_name, discounts.discount_change
+#
+
+# SAME FUCKING QUERY
+SELECT DISTINCT(p.product_name), p.base_price,
+(p.base_price * d.discount_change) AS discounted_price,
+d.discount_change, count(p.product_name) AS amount_in_stock,
+d.start_date, d.end_date, d.discount_name
+FROM products AS p, discounts AS d
+WHERE d.d_products=p.product_name
+GROUP BY d.discount_name, p.product_name, p.base_price, d.discount_change, d.start_date, d.end_date, d.discount_name
+#
+
+#cursor.execute("SELECT DISTINCT(p.product_name), d.discount_name, d.discount_change, d.start_date, d.end_date, (p.base_price * d.discount_change) AS updated_price FROM products p INNER JOIN discounts d ON p.product_name = d.d_products ORDER BY  d.discount_name, d.discount_change, d.start_date, d.end_date")
+#cursor.execute("select distinct(p.product_name), p.base_price, count(p.product_name) as amount_in_stock from products left join discounts on d.d_products=p.product_name group by product_name, base_price, amount_in_stock")
+
+
+#SELECT DISTINCT(p.product_name), d.discount_name, d.discount_change, d.start_date, d.end_date, (p.base_price * d.discount_change) AS updated_price FROM products p INNER JOIN discounts d ON p.product_name = d.d_products ORDER BY  d.discount_name, d.discount_change, d.start_date, d.end_date
+#SELECT DISTINCT(p.product_name), d.discount_name, d.discount_change, d.start_date, d.end_date, (p.base_price * d.discount_change) AS updated_price FROM products p INNER JOIN discounts d ON p.product_name = d.d_products ORDER BY  d.discount_name, d.discount_change, d.start_date, d.end_date
+#prod name, disc name, change in price, start, end, new price
