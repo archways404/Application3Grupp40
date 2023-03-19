@@ -11,8 +11,8 @@ app.secret_key = 'grupp40'
  
 DB_HOST = "pgserver.mau.se"
 DB_NAME = "grupp40"
-DB_USER = "an4231"
-DB_PASS = "6umx36wl"
+DB_USER = ""
+DB_PASS = ""
  
 conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
  
