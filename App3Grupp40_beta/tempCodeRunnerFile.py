@@ -1,1 +1,1 @@
-product_list
+p_name

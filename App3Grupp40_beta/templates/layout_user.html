@@ -29,16 +29,18 @@
                   Dashboard <span class="sr-only">(current)</span>
                 </a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#">
-                  <i class="fas fa-shopping-cart"></i>
-                  Orders
-                </a>
-              </li>
+             
               <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('user_products_order') }}">
                 <i class="fas fa-shopping-cart"></i>
                   Products
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('user_search') }}">
+                  <i class="fas fa-shopping-cart"></i>
+                  Search
                 </a>
               </li>
 
@@ -49,6 +51,12 @@
                 View Cart
               </a>
             </li>
+             <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <i class="fas fa-shopping-cart"></i>
+                  Orders
+                </a>
+              </li>
             </ul>
   </div>
         </nav>

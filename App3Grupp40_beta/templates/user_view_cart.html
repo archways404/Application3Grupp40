@@ -60,8 +60,35 @@
         <td>{{row[0]}}</td>
         <td>{{row[1]}}</td>
         <td>{{row[2]}}</td>
+        <td>{{row[3]}}</td>
+        <td>{{row[4]}}</td>
+        <td>{{row[5]}}</td>
+        <td>{{row[6]}}</td>
       </tr>
   {% endfor %}
     </tbody>
   </table>
+  <table>
+    <thead>
+      <tr>
+        <th>order_id</th>
+        <th>Price</th>
+        <th>Order Number</th>
+      </tr>
+    </thead>    
+    <tbody>
+  {% for row in cost %}    
+      <tr>
+        <td>{{row[0]}}</td>
+        <td>{{row[1]}}</td>
+        <td>{{row[2]}}</td>
+        <td>{{row[3]}}</td>
+        <td>{{row[4]}}</td>
+        <td>{{row[5]}}</td>
+        <td>{{row[6]}}</td>
+      </tr>
+  {% endfor %}
+    </tbody>
+  </table>
+
   {% endblock %}

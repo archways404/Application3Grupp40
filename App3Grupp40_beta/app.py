@@ -1,4 +1,4 @@
-#Beta v2.0 *(9/3)
+#Beta v3.0 *(9/3)
 
 from flask import Flask, request, session, redirect, url_for, render_template, flash
 import psycopg2 #pip install psycopg2 
@@ -23,10 +23,146 @@ def home():
     data = cursor.fetchall()
     if 'loggedin' in session:
         if session['is_admin'] == True:
-            return render_template('home_admin.html', email=session['email'], is_admin=session['is_admin'], data=data )
-        else:
-            return render_template('home_user.html', email=session['email'], data=data)
+            return render_template('home_admin.html', email=session['email'], is_admin=session['is_admin'], data=data)
+        return render_template('home_user.html', email=session['email'], data=data)
     return render_template('home.html', data=data)
+
+@app.route('/admin_search', methods=['GET', 'POST'])
+def admin_search():
+    if 'loggedin' in session:
+        if session['is_admin'] == True:
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            #cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
+            #data = cursor.fetchall()
+
+            #select distinct(product_name), count(product_name) as amount, supplier_id, base_price, discount_change, start_date, end_date, sum(base_price*discount_change) as total_price from products
+            #join discounts on products.product_name=discounts.d_products
+            #WHERE start_date BETWEEN CURRENT_DATE AND end_date
+            #group by product_name, product_id, supplier_id, base_price, discount_change, start_date, end_date 
+
+
+
+            #select distinct(product_name), count(product_name) as amount, supplier_id, base_price, discount_change, start_date, end_date, sum(base_price*discount_change) as total_price from products
+            #join discounts on products.product_name=discounts.d_products
+            #group by product_name, product_id, supplier_id, base_price, discount_change, start_date, end_date
+
+            cursor.execute('SELECT DISTINCT(supplier_name), supplier_id FROM suppliers') 
+            supplier_name = cursor.fetchall()
+
+            cursor.execute('select distinct(product_name) from products') 
+            product_name = cursor.fetchall()
+
+            cursor.execute('SELECT product_id from products')
+            product_id = cursor.fetchall()
+            if request.method == 'POST':
+
+                supplier_name = request.form.get('supplier_name')
+                product_name = request.form.get('product_name')
+                product_id = request.form.get('product_id')
+
+                if  supplier_name != "None" and product_name != "None" and product_id != "None":
+                    cursor.execute('select * from products WHERE product_id=%s AND product_name=%s AND supplier_id=%s ', (product_id, product_name, supplier_name,))
+                    result = cursor.fetchall()
+                    return render_template('admin_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+
+                if  supplier_name != "None" and product_name != "None":
+                    cursor.execute('select * from products WHERE product_name=%s AND supplier_id=%s ', ( product_name, supplier_name,))
+                    result = cursor.fetchall()
+                    return render_template('admin_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+
+                if  product_name != "None" and product_id != "None":
+                    cursor.execute('select * from products WHERE product_id=%s AND product_name=%s', (product_id, product_name,))
+                    result = cursor.fetchall()
+                    return render_template('admin_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+
+                if  supplier_name != "None":
+                    cursor.execute('select * from products WHERE supplier_id=%s ', (supplier_name,))
+                    result = cursor.fetchall()
+                    return render_template('admin_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+
+                if  product_name != "None":
+                    cursor.execute('select * from products WHERE product_name=%s', ( product_name,))
+                    result = cursor.fetchall()
+                    return render_template('admin_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+
+                if  product_id != "None":
+                    cursor.execute('select * from products WHERE product_id=%s', (product_id,))
+                    result = cursor.fetchall()
+                    return render_template('admin_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+            else:
+                flash('Please fill out the search form')
+                return render_template('admin_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id)
+        else:
+            return render_template('home_user.html', email=session['email'])
+
+    return render_template('home.html')
+
+@app.route('/user_search', methods=['GET', 'POST'])
+def user_search():
+    if 'loggedin' in session:
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            #cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
+            #data = cursor.fetchall()
+
+            cursor.execute('SELECT DISTINCT(supplier_name), supplier_id FROM suppliers') 
+            supplier_name = cursor.fetchall()
+
+            cursor.execute('select distinct(product_name) from products') 
+            product_name = cursor.fetchall()
+
+            cursor.execute('SELECT product_id from products')
+            product_id = cursor.fetchall()
+            if request.method == 'POST':
+
+                supplier_name = request.form.get('supplier_name')
+                product_name = request.form.get('product_name')
+                product_id = request.form.get('product_id')
+                discounts = request.form.get('discounts')
+
+                if  discounts == "YES":
+                    cursor.execute('select distinct(product_name), count(product_name) as amount, supplier_id, base_price, discount_change, start_date, end_date, sum(base_price*discount_change) as total_price from products join discounts on products.product_name=discounts.d_products WHERE start_date BETWEEN CURRENT_DATE AND end_date group by product_name, product_id, supplier_id, base_price, discount_change, start_date, end_date') 
+                    result = cursor.fetchall()
+                    return render_template('user_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+                if  discounts == "ALL":
+                    cursor.execute('select distinct(product_name), count(product_name) as amount, supplier_id, base_price, discount_change, start_date, end_date, sum(base_price*discount_change) as total_price from products join discounts on products.product_name=discounts.d_products group by product_name, product_id, supplier_id, base_price, discount_change, start_date, end_date') 
+                    result = cursor.fetchall()
+                    return render_template('user_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+                else:
+
+                    if  supplier_name != "None" and product_name != "None" and product_id != "None":
+                        cursor.execute('select * from products WHERE product_id=%s AND product_name=%s AND supplier_id=%s ', (product_id, product_name, supplier_name,))
+                        result = cursor.fetchall()
+                        return render_template('user_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+
+                    if  supplier_name != "None" and product_name != "None":
+                        cursor.execute('select * from products WHERE product_name=%s AND supplier_id=%s ', ( product_name, supplier_name,))
+                        result = cursor.fetchall()
+                        return render_template('user_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+
+                    if  product_name != "None" and product_id != "None":
+                        cursor.execute('select * from products WHERE product_id=%s AND product_name=%s', (product_id, product_name,))
+                        result = cursor.fetchall()
+                        return render_template('user_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+
+                    if  supplier_name != "None":
+                        cursor.execute('select * from products WHERE supplier_id=%s ', (supplier_name,))
+                        result = cursor.fetchall()
+                        return render_template('user_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+
+                    if  product_name != "None":
+                        cursor.execute('select * from products WHERE product_name=%s', ( product_name,))
+                        result = cursor.fetchall()
+                        return render_template('user_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+
+                    if  product_id != "None":
+                        cursor.execute('select * from products WHERE product_id=%s', (product_id,))
+                        result = cursor.fetchall()
+                        return render_template('user_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id, result=result)
+            else:
+                flash('Please fill out the search form')
+                return render_template('user_search.html', supplier_name=supplier_name, product_name=product_name, product_id=product_id)
+    else:
+        return render_template('home.html')
 
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
@@ -204,6 +340,7 @@ def admin_add_edit_product():
                 quantity_str = request.form.get('quantity')
                 choice = request.form.get('choice')
                 quantity= int(quantity_str)
+                out_of_stock = False
                 
                 if not supplier_id or not product_name or not quantity or not choice:
                     flash('Please fill out the form!')
@@ -214,11 +351,6 @@ def admin_add_edit_product():
 
                         i = 1
                         while (i <= quantity):
-
-
-
-
-
 
                             cursor.execute('SELECT product_name, base_price, supplier_id FROM products WHERE product_name =  %s' , (product_name,))
                             add_product_list = cursor.fetchall()
@@ -427,6 +559,9 @@ def admin_view_cart():
             cursor.execute("SELECT order_id from orders WHERE is_paid = False")
             unconfirmed_order = cursor.fetchall()
 
+            cursor.execute("select distinct(product), count(product) AS amount from cart join orders on cart.ord_id=orders.order_id WHERE is_paid=true Group by product")
+            stats = cursor.fetchall()
+
             if request.method == 'POST' and 'choice' in request.form:           
                 choice = request.form.get('choice')
                 order_id_select = request.form.get('order_id_select')
@@ -450,7 +585,6 @@ def admin_view_cart():
                         flash("Error. You can't change orders that have been paid!")
                     if status == False:
                         
-
                         cursor.execute("SELECT product FROM cart WHERE ord_id = %s", (order_id_select,))
                         product_list = cursor.fetchall()
 
@@ -503,7 +637,7 @@ def admin_view_cart():
                     flash('Please select an option!')
 
                 
-            return render_template('admin_view_cart.html', data=data, unconfirmed_order=unconfirmed_order)
+            return render_template('admin_view_cart.html', data=data, unconfirmed_order=unconfirmed_order, stats=stats)
         else:
             return render_template('profile.html')
     return redirect(url_for('login'))
@@ -519,6 +653,9 @@ def user_view_cart():
 
             cursor.execute("SELECT DISTINCT(order_id) FROM orders WHERE is_paid=false AND email = %s", (active_user,))
             unconfirmed_order = cursor.fetchall()
+
+            cursor.execute("select ord_id, sum(base_price*discount_change) as total_price from cart join products on products.product_name=cart.product join discounts on discounts.d_products=cart.product group by ord_id")
+            cost = cursor.fetchall()
 
             cursor.execute("SELECT product, COUNT(product) as Quantity, ord_id FROM cart WHERE account = %s GROUP BY product, ord_id ORDER BY ord_id DESC", (active_user,))
             data = cursor.fetchall()
@@ -624,7 +761,7 @@ def user_view_cart():
 
                 if choice == 'SELECT':
                     flash('Please select an option!')
-            return render_template('user_view_cart.html', data=data, active_user=active_user, unconfirmed_order=unconfirmed_order)
+            return render_template('user_view_cart.html', data=data, active_user=active_user, unconfirmed_order=unconfirmed_order, cost=cost)
         else:
             return render_template('profile.html')
     return redirect(url_for('login'))
@@ -685,13 +822,13 @@ def user_products_order():
                                 current_stock = int(delete_product_count_str)
 
                                 cursor.execute('SELECT out_of_stock FROM products WHERE product_name = %s' , (product_name,))
-                                outofstock_line = cursor.fetchone()
-                                outofstock = outofstock_line[0]
+                                out_of_stock_value_line = cursor.fetchone()
+                                out_of_stock_value = out_of_stock_value_line[0]
                                 print('out of stock:')
-                                print(outofstock)
+                                print(out_of_stock_value)
 
                                 print("Value of current_stock:")
-                                print(current_stock)
+                                print(out_of_stock_value)
 
                                 if (current_stock > 1):
                                     print('Current stock is greater than 1:')
@@ -783,6 +920,8 @@ def user_products_order():
 
 #cursor.execute("select distinct(product_name), base_price, supplier_name, count(product_name) as amount from products join suppliers on suppliers.supplier_id=products.supplier_id group by base_price, product_name, supplier_name")
 #OLD shows everything but not updated price
+
+
     
 if __name__ == "__main__":
     app.run(debug=True)

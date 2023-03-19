@@ -1,7 +1,17 @@
+Installera dessa genom att köra commands i terminal:
+
 pip install psycopg2 
+pip install Flask
+pip install Flask-SQLAlchemy
+pip install flask-login
 
-flask
-Flask-SQLAlchemy
-flask-login
 
-//PyMySQL
+Login för admin-konto är:
+
+admin@test.com
+admin
+
+User account:
+
+user@test.com 
+user (hope that's correct, annars skapa ett nytt konto bara :D)
